@@ -1,0 +1,3021 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#fafaf7" />
+  <title>DHP Estate · ARV Underwriter</title>
+
+  <!-- Typography: Inter for UI, IBM Plex Mono for numbers, Source Serif for headings -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+
+  <!-- jsPDF (PDF export) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    /* ============================================================
+       DHP ESTATE — Design System
+       Style: Editorial Grid + Data-Dense Dashboard hybrid
+       Mood: Professional, analytical, trustworthy (real estate B2B)
+       Inspiration: Bloomberg Terminal, HouseCanary, Stessa
+       Anti-patterns avoided: neon gradients, glow shadows, AI purple,
+                              blur-heavy glass, gradient backgrounds
+       ============================================================ */
+
+    :root {
+      /* Brand color: deep forest green (trust + finance) */
+      --brand-900: #0f2e22;
+      --brand-800: #14402f;
+      --brand-700: #1a523c;
+      --brand-600: #226b4f;
+      --brand-500: #2d8964;
+      --brand-100: #d8ebe1;
+      --brand-50:  #eef6f1;
+
+      /* Accent: aged gold (highlights, focus) — used sparingly */
+      --gold-700: #8a6a18;
+      --gold-500: #b8902a;
+      --gold-300: #e2c463;
+      --gold-100: #f4e8c1;
+
+      /* Signal colors (PASS/FAIL/WARN) — restrained, not neon */
+      --signal-pos: #1f7a4d;
+      --signal-pos-bg: #e6f3ec;
+      --signal-neg: #b3261e;
+      --signal-neg-bg: #fce9e7;
+      --signal-warn: #8a5d00;
+      --signal-warn-bg: #faf0d7;
+
+      /* Neutrals — warm paper-tone, not cool gray */
+      --ink-900: #1a1a1a;
+      --ink-700: #3d3d3d;
+      --ink-600: #525252;
+      --ink-500: #6e6e6e;
+      --ink-400: #8a8a8a;
+      --ink-300: #b3b3b3;
+      --ink-200: #d4d4d4;
+      --ink-100: #e8e6e1;
+      --ink-50:  #f5f3ee;
+      --paper:   #fafaf7;
+      --white:   #ffffff;
+
+      /* Typography */
+      --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono: "IBM Plex Mono", "SF Mono", "Roboto Mono", Consolas, monospace;
+      --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+      /* Spacing scale */
+      --s1: 4px;
+      --s2: 8px;
+      --s3: 12px;
+      --s4: 16px;
+      --s5: 24px;
+      --s6: 32px;
+      --s7: 48px;
+
+      /* Radii — restrained */
+      --r1: 4px;
+      --r2: 6px;
+      --r3: 8px;
+
+      /* Borders */
+      --border: 1px solid var(--ink-100);
+      --border-strong: 1px solid var(--ink-200);
+
+      /* Transitions */
+      --t1: 120ms ease;
+      --t2: 200ms ease;
+    }
+
+    /* Dark mode — keep restraint, no glow */
+    [data-theme="dark"] {
+      --brand-50:  #102a20;
+      --brand-100: #133929;
+      --brand-500: #4cae84;
+      --brand-600: #6cc59d;
+      --brand-700: #8bd5b3;
+
+      --gold-100: #3d2f15;
+      --gold-300: #c5a346;
+      --gold-500: #e2c463;
+
+      --signal-pos: #4cae84;
+      --signal-pos-bg: #102a20;
+      --signal-neg: #ef6259;
+      --signal-neg-bg: #2a1311;
+      --signal-warn: #d8a83a;
+      --signal-warn-bg: #2a2110;
+
+      --ink-900: #f0eee9;
+      --ink-700: #d0cdc6;
+      --ink-600: #adaaa3;
+      --ink-500: #8e8b85;
+      --ink-400: #6d6a64;
+      --ink-300: #4d4a45;
+      --ink-200: #36332e;
+      --ink-100: #26241f;
+      --ink-50:  #1a1814;
+      --paper:   #131210;
+      --white:   #1a1814;
+
+      --border: 1px solid var(--ink-200);
+      --border-strong: 1px solid var(--ink-300);
+    }
+
+    /* ============================================================
+       BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font-ui);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink-900);
+      background: var(--paper);
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: var(--s4) var(--s4) var(--s7);
+    }
+
+    /* Topbar — editorial newspaper masthead style */
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--s3);
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--s4) 0;
+      border-bottom: 2px solid var(--brand-900);
+      margin-bottom: var(--s5);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--paper);
+    }
+    .brand {
+      display: flex;
+      gap: var(--s3);
+      align-items: center;
+    }
+    .brand .logo {
+      width: 36px;
+      height: 36px;
+      background: var(--brand-900);
+      color: var(--white);
+      font-family: var(--font-serif);
+      font-weight: 600;
+      font-size: 20px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--r2);
+    }
+    [data-theme="dark"] .brand .logo {
+      background: var(--brand-500);
+      color: var(--brand-900);
+    }
+    .brand h1 {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--ink-900);
+    }
+    .brand p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: var(--ink-500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--s2);
+      align-items: center;
+    }
+
+    /* ============================================================
+       BUTTONS — flat, no gradients
+       ============================================================ */
+    .btn {
+      font-family: var(--font-ui);
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: -0.005em;
+      padding: 8px 14px;
+      border-radius: var(--r2);
+      border: 1px solid var(--ink-200);
+      background: var(--white);
+      color: var(--ink-900);
+      cursor: pointer;
+      transition: background var(--t1), border-color var(--t1);
+    }
+    .btn:hover { background: var(--ink-50); border-color: var(--ink-300); }
+    .btn:focus-visible {
+      outline: 2px solid var(--brand-500);
+      outline-offset: 2px;
+    }
+
+    .btn.primary {
+      background: var(--brand-700);
+      border-color: var(--brand-700);
+      color: var(--white);
+    }
+    .btn.primary:hover { background: var(--brand-800); border-color: var(--brand-800); }
+
+    .btn.secondary {
+      background: var(--white);
+      border-color: var(--ink-200);
+      color: var(--ink-900);
+    }
+
+    .btn.good {
+      background: var(--brand-700);
+      border-color: var(--brand-700);
+      color: var(--white);
+    }
+    .btn.good:hover { background: var(--brand-800); border-color: var(--brand-800); }
+
+    .btn.warn {
+      background: var(--white);
+      border-color: var(--gold-500);
+      color: var(--gold-700);
+    }
+    .btn.warn:hover { background: var(--gold-100); }
+
+    /* Theme toggle */
+    .themeBtn {
+      width: 36px;
+      padding: 8px 0;
+      display: grid;
+      place-items: center;
+    }
+
+    /* ============================================================
+       LAYOUT GRID
+       ============================================================ */
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.85fr;
+      gap: var(--s5);
+      align-items: start;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .topbar { position: static; }
+    }
+
+    /* ============================================================
+       CARDS — editorial, restrained
+       ============================================================ */
+    .card {
+      background: var(--white);
+      border: var(--border);
+      border-radius: var(--r3);
+      overflow: hidden;
+    }
+    .card .hd {
+      padding: var(--s4) var(--s4) var(--s3);
+      border-bottom: var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--s3);
+      background: var(--ink-50);
+    }
+    .card .hd h2 {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+    }
+    .card .hd .sub {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: var(--ink-500);
+    }
+    .card .bd { padding: var(--s4); }
+
+    /* Section divider — editorial */
+    .section { margin-top: var(--s5); }
+    .section:first-child { margin-top: 0; }
+    .secTitle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s3);
+      margin-bottom: var(--s3);
+      flex-wrap: wrap;
+      padding-bottom: var(--s2);
+      border-bottom: 1px solid var(--ink-100);
+    }
+    .secTitle h3 {
+      margin: 0;
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-700);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .hr {
+      height: 1px;
+      background: var(--ink-100);
+      border: none;
+      margin: var(--s5) 0;
+    }
+
+    /* ============================================================
+       CHIPS / BADGES — flat, semantic
+       ============================================================ */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: var(--r1);
+      background: var(--ink-100);
+      color: var(--ink-700);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .chip.good {
+      background: var(--signal-pos-bg);
+      color: var(--signal-pos);
+    }
+    .chip.bad {
+      background: var(--signal-neg-bg);
+      color: var(--signal-neg);
+    }
+    .chip.warn {
+      background: var(--signal-warn-bg);
+      color: var(--signal-warn);
+    }
+
+    /* Verdict badge — bigger, dominant */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--r2);
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+      background: var(--ink-100);
+      color: var(--ink-700);
+    }
+    .badge.pass {
+      background: var(--signal-pos-bg);
+      color: var(--signal-pos);
+      border-color: var(--signal-pos);
+    }
+    .badge.fail {
+      background: var(--signal-neg-bg);
+      color: var(--signal-neg);
+      border-color: var(--signal-neg);
+    }
+    .badge.warn {
+      background: var(--signal-warn-bg);
+      color: var(--signal-warn);
+      border-color: var(--signal-warn);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ============================================================
+       FORMS — clean, generous padding
+       ============================================================ */
+    .formgrid {
+      display: grid;
+      gap: var(--s3);
+      grid-template-columns: repeat(12, 1fr);
+    }
+    .fg { grid-column: span 3; }
+    .fg.w4 { grid-column: span 4; }
+    .fg.w6 { grid-column: span 6; }
+    .fg.w8 { grid-column: span 8; }
+    .fg.w12 { grid-column: span 12; }
+    @media (max-width: 720px) {
+      .fg, .fg.w4, .fg.w6, .fg.w8 { grid-column: span 12; }
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--ink-600);
+      margin: 0 0 5px;
+      letter-spacing: 0.02em;
+    }
+    input, select, textarea {
+      width: 100%;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      color: var(--ink-900);
+      background: var(--white);
+      border: 1px solid var(--ink-200);
+      border-radius: var(--r2);
+      padding: 9px 11px;
+      outline: none;
+      transition: border-color var(--t1), box-shadow var(--t1);
+    }
+    /* Monospace numbers for any numeric input */
+    input[inputmode="decimal"],
+    input[inputmode="numeric"],
+    input[disabled] {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--brand-500);
+      box-shadow: 0 0 0 3px var(--brand-50);
+    }
+    input::placeholder, textarea::placeholder {
+      color: var(--ink-400);
+    }
+    input[disabled] {
+      background: var(--ink-50);
+      color: var(--ink-600);
+      cursor: not-allowed;
+    }
+    textarea {
+      min-height: 70px;
+      resize: vertical;
+      font-family: var(--font-ui);
+    }
+    .hint {
+      font-size: 11px;
+      color: var(--ink-500);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* ============================================================
+       KPI GRID — the showpiece for numbers
+       ============================================================ */
+    .kpiGrid {
+      display: grid;
+      gap: var(--s3);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    @media (max-width: 980px) { .kpiGrid { grid-template-columns: 1fr; } }
+
+    .kpi {
+      padding: var(--s3) var(--s4);
+      border: var(--border);
+      border-radius: var(--r2);
+      background: var(--white);
+      transition: border-color var(--t1);
+    }
+    .kpi:hover { border-color: var(--ink-200); }
+    .kpi .t {
+      margin: 0 0 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--ink-500);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .kpi .v {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--ink-900);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .kpi .v.pos { color: var(--signal-pos); }
+    .kpi .v.neg { color: var(--signal-neg); }
+    .kpi .mini {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: var(--ink-500);
+      line-height: 1.4;
+    }
+
+    /* ============================================================
+       TABLES — data-dense, financial style
+       ============================================================ */
+    .tblWrap {
+      overflow: auto;
+      border: var(--border);
+      border-radius: var(--r2);
+      background: var(--white);
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    th, td {
+      padding: 7px 9px;
+      text-align: left;
+      font-size: 12px;
+      white-space: nowrap;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--ink-100);
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: var(--ink-50);
+      color: var(--ink-600);
+      font-weight: 600;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      z-index: 2;
+      border-bottom: 1px solid var(--ink-200);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr.compFlag td { background: var(--signal-warn-bg); }
+    tr.compStale td { background: var(--signal-neg-bg); }
+    td input, td select {
+      padding: 6px 8px;
+      min-width: 90px;
+      font-size: 12px;
+      border-radius: var(--r1);
+    }
+    td .tiny { min-width: 70px; }
+    td .micro { min-width: 55px; }
+    td .wide { min-width: 160px; }
+
+    /* Inline calculated cells should look like results, not inputs */
+    .c_adjprice, .c_psf, .c_apsf {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      color: var(--ink-700);
+    }
+
+    /* ============================================================
+       MINI BUTTONS — row actions
+       ============================================================ */
+    .rowBtns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .miniBtn {
+      font-family: var(--font-ui);
+      padding: 5px 9px;
+      border-radius: var(--r1);
+      font-size: 11.5px;
+      font-weight: 500;
+      border: 1px solid var(--ink-200);
+      background: var(--white);
+      color: var(--ink-700);
+      cursor: pointer;
+      transition: background var(--t1), border-color var(--t1);
+      white-space: nowrap;
+    }
+    .miniBtn:hover {
+      background: var(--ink-50);
+      border-color: var(--ink-300);
+    }
+    .miniBtn.accent {
+      background: var(--brand-50);
+      border-color: var(--brand-100);
+      color: var(--brand-700);
+    }
+    .miniBtn.accent:hover {
+      background: var(--brand-100);
+      border-color: var(--brand-500);
+    }
+    .miniBtn.good {
+      background: var(--signal-pos-bg);
+      border-color: var(--signal-pos);
+      color: var(--signal-pos);
+    }
+    .miniBtn.warn {
+      background: var(--gold-100);
+      border-color: var(--gold-500);
+      color: var(--gold-700);
+    }
+    .miniBtn.danger {
+      background: var(--white);
+      border-color: var(--ink-200);
+      color: var(--signal-neg);
+      font-weight: 600;
+    }
+    .miniBtn.danger:hover {
+      background: var(--signal-neg-bg);
+      border-color: var(--signal-neg);
+    }
+
+    /* ============================================================
+       PILLS — method toggles
+       ============================================================ */
+    .pillRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-top: var(--s3);
+      padding: var(--s2);
+      background: var(--ink-50);
+      border: var(--border);
+      border-radius: var(--r2);
+    }
+    .pill {
+      padding: 5px 11px;
+      border-radius: var(--r1);
+      font-size: 11.5px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-600);
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--t1), color var(--t1);
+    }
+    .pill:hover { background: var(--white); }
+    .pill.active {
+      background: var(--white);
+      border-color: var(--ink-200);
+      color: var(--brand-700);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    /* ============================================================
+       NOTES / CALLOUTS — editorial sidebar quote
+       ============================================================ */
+    .note {
+      margin-top: var(--s3);
+      padding: var(--s3) var(--s4);
+      border-left: 3px solid var(--ink-300);
+      background: var(--ink-50);
+      border-radius: 0 var(--r2) var(--r2) 0;
+      color: var(--ink-700);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .note.warn {
+      border-left-color: var(--signal-warn);
+      background: var(--signal-warn-bg);
+      color: var(--signal-warn);
+    }
+    .note.bad {
+      border-left-color: var(--signal-neg);
+      background: var(--signal-neg-bg);
+      color: var(--signal-neg);
+    }
+    .note b, .note strong { color: inherit; font-weight: 600; }
+    .small { font-size: 11px; color: var(--ink-500); }
+
+    /* ============================================================
+       SPLIT / ROW HELPERS
+       ============================================================ */
+    .split {
+      display: flex;
+      gap: var(--s3);
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: var(--s2);
+    }
+    .rightStack { display: grid; gap: var(--s5); }
+
+    /* ============================================================
+       MODAL
+       ============================================================ */
+    .modalBack {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 46, 34, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: var(--s4);
+    }
+    .modalBack.open { display: flex; }
+    .modal {
+      background: var(--white);
+      border: var(--border);
+      border-radius: var(--r3);
+      max-width: 600px;
+      width: 100%;
+      max-height: 85vh;
+      overflow: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+    .modal .hd {
+      padding: var(--s4);
+      border-bottom: var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--s3);
+      background: var(--ink-50);
+    }
+    .modal .bd { padding: var(--s4); }
+    .libRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--s3);
+      padding: var(--s3);
+      border-radius: var(--r2);
+      border: var(--border);
+      margin-bottom: var(--s2);
+      background: var(--white);
+      transition: border-color var(--t1);
+    }
+    .libRow:hover { border-color: var(--ink-300); }
+    .libRow .addr {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--ink-900);
+    }
+    .libRow .meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-500);
+      margin-top: 3px;
+    }
+    .libRow .actions { display: flex; gap: 6px; }
+
+    /* ============================================================
+       SENSITIVITY TABLE
+       ============================================================ */
+    .sensTable { margin-top: var(--s3); }
+    .sensTable td {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .sensTable td:first-child {
+      text-align: left;
+      color: var(--ink-700);
+      font-family: var(--font-ui);
+      font-weight: 600;
+    }
+    .sensTable td.pos { color: var(--signal-pos); background: var(--signal-pos-bg); }
+    .sensTable td.neg { color: var(--signal-neg); background: var(--signal-neg-bg); }
+
+    /* ============================================================
+       ACCESSIBILITY
+       ============================================================ */
+    *:focus-visible {
+      outline: 2px solid var(--brand-500);
+      outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+      }
+    }
+
+    /* ============================================================
+       PRINT — clean light theme
+       ============================================================ */
+    @media print {
+      :root { --paper: white; --white: white; }
+      body { background: white; color: black; font-size: 11px; }
+      .topbar, .actions, .miniBtn, .btn { display: none !important; }
+      .card {
+        border: 1px solid #ccc;
+        background: white;
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+      .grid { grid-template-columns: 1fr; display: block; }
+      .kpi { border: 1px solid #ddd; background: white; }
+      .kpi .v { color: black !important; }
+      th { background: #f0f0f0 !important; color: black; }
+    }
+
+    /* ============================================================
+       MOBILE TWEAKS
+       ============================================================ */
+    @media (max-width: 720px) {
+      .wrap { padding: var(--s3); }
+      .brand h1 { font-size: 16px; }
+      .actions .btn { padding: 7px 10px; font-size: 12px; }
+      .kpi .v { font-size: 18px; }
+      .card .hd { padding: var(--s3); }
+      .card .bd { padding: var(--s3); }
+    }
+  </style>
+</head>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">D</div>
+        <div>
+          <h1>ARV Underwriter</h1>
+          <p>DHP Estate · Investor Analytics</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn secondary themeBtn" id="btnTheme" type="button" title="Toggle theme" aria-label="Toggle dark mode">◐</button>
+        <button class="btn secondary" id="btnReset" type="button" title="Reset all fields">Reset</button>
+        <button class="btn secondary" id="btnQuickSave" type="button" title="Quick-save">Save</button>
+        <button class="btn secondary" id="btnLibrary" type="button" title="Property library">Library</button>
+        <button class="btn warn" id="btnStress" type="button" title="Stress test scenarios">Stress Test</button>
+        <button class="btn primary" id="btnPdf" type="button">Export PDF</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: INPUTS -->
+      <div class="card">
+        <div class="hd">
+          <div>
+            <h2>Inputs</h2>
+            <p class="sub">Fill comps → ARV updates → MAO/Profit auto-calculates</p>
+          </div>
+          <span class="chip" id="calcStatus">Ready</span>
+        </div>
+
+        <div class="bd">
+          <!-- Property -->
+          <div class="section">
+            <div class="secTitle">
+              <h3>Property Details</h3>
+              <span class="chip">Subject Property</span>
+            </div>
+
+            <div class="formgrid">
+              <div class="fg w8">
+                <label for="address">Address</label>
+                <input id="address" placeholder="Property address, City, State ZIP" />
+              </div>
+              <div class="fg w4">
+                <label for="ptype">Property Type</label>
+                <select id="ptype">
+                  <option value="Single Family">Single Family</option>
+                  <option value="Townhome">Townhome</option>
+                  <option value="Condo">Condo</option>
+                  <option value="Multi-Family (2-4)">Multi-Family (2-4)</option>
+                  <option value="Land">Land</option>
+                </select>
+              </div>
+
+              <div class="fg">
+                <label for="sqft">Square Footage</label>
+                <input id="sqft" inputmode="decimal" placeholder="e.g. 3192" />
+              </div>
+              <div class="fg">
+                <label for="beds">Beds</label>
+                <input id="beds" inputmode="decimal" placeholder="e.g. 4" />
+              </div>
+              <div class="fg">
+                <label for="baths">Baths</label>
+                <input id="baths" inputmode="decimal" placeholder="e.g. 2.5" />
+              </div>
+              <div class="fg">
+                <label for="yearBuilt">Year Built</label>
+                <input id="yearBuilt" inputmode="numeric" placeholder="e.g. 1994" />
+              </div>
+
+              <div class="fg w4">
+                <label for="lotSize">Lot Size (sqft)</label>
+                <input id="lotSize" inputmode="decimal" placeholder="e.g. 12000" />
+              </div>
+              <div class="fg w4">
+                <label for="garage">Garage Spaces</label>
+                <input id="garage" inputmode="numeric" placeholder="e.g. 2" />
+              </div>
+              <div class="fg w4">
+                <label for="condition">Current Condition</label>
+                <select id="condition">
+                  <option value="distressed">Distressed / As-is</option>
+                  <option value="dated">Dated but functional</option>
+                  <option value="average" selected>Average</option>
+                  <option value="updated">Recently updated</option>
+                  <option value="renovated">Fully renovated</option>
+                </select>
+              </div>
+
+              <div class="fg w12">
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="Deal notes, condition observations, seller motivation, strategy..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Comps -->
+          <div class="section">
+            <div class="secTitle">
+              <h3>Comps</h3>
+              <div class="rowBtns">
+                <button class="miniBtn accent" id="addComp" type="button">+ Add Comp</button>
+                <button class="miniBtn" id="add3Comp" type="button">+ Add 3</button>
+                <button class="miniBtn warn" id="autoAdj" type="button" title="Auto-suggest adjustments based on sqft variance">Auto-Adjust</button>
+              </div>
+            </div>
+
+            <div class="pillRow">
+              <span class="small" style="margin-right:6px">ARV method:</span>
+              <span class="pill active" data-method="avg">Avg Adj Price</span>
+              <span class="pill" data-method="median">Median Adj Price</span>
+              <span class="pill" data-method="psfmedian">Median $/sqft × Subject</span>
+              <span class="pill" data-method="weighted">Distance-Weighted</span>
+            </div>
+
+            <div class="tblWrap" style="margin-top:10px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Use</th>
+                    <th>Sold Price</th>
+                    <th>Adj $</th>
+                    <th>Adj Price</th>
+                    <th>SqFt</th>
+                    <th>$/SqFt</th>
+                    <th>Adj $/SqFt</th>
+                    <th>Dist (mi)</th>
+                    <th>Sold Date</th>
+                    <th>Quality</th>
+                    <th class="wide">Notes</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="compBody"></tbody>
+              </table>
+            </div>
+
+            <div id="compStats" class="note" style="display:none"></div>
+
+            <div class="note">
+              <b>Adjusted Price = Sold Price + Adj $.</b> Positive Adj = comp should be valued higher than what it sold for; negative = lower.<br/>
+              Use comps within ~0.5 mi, sold in last 6 months, similar sqft (±20%). Flagged rows mean violations.
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Rehab -->
+          <div class="section">
+            <div class="secTitle">
+              <h3>Rehab</h3>
+              <span class="chip" id="rehabChip">Quick Estimate</span>
+            </div>
+
+            <div class="formgrid">
+              <div class="fg w6">
+                <label for="rehabMode">Rehab Mode</label>
+                <select id="rehabMode">
+                  <option value="quick">Quick Estimate ($/SqFt + Allowance)</option>
+                  <option value="detailed">Detailed Line Items</option>
+                  <option value="inspector">Inspector Checklist (DHP)</option>
+                </select>
+                <div class="hint">Inspector mode pre-loads typical Chicago-metro pricing for common findings.</div>
+              </div>
+
+              <div class="fg w6">
+                <label>Rehab Level (auto)</label>
+                <div class="badge warn" id="rehabBadge"><span class="dot"></span><span id="rehabLevel">—</span></div>
+                <div class="hint">Cosmetic ≤ $35/sqft • Medium ≤ $65/sqft • Heavy > $65/sqft</div>
+              </div>
+            </div>
+
+            <!-- Quick -->
+            <div id="rehabQuick">
+              <div class="formgrid" style="margin-top:10px">
+                <div class="fg w4">
+                  <label for="rehabPerSqft">Quick $/SqFt</label>
+                  <input id="rehabPerSqft" inputmode="decimal" placeholder="e.g. 45" />
+                </div>
+                <div class="fg w4">
+                  <label for="rehabAllowance">Allowance (lump sum)</label>
+                  <input id="rehabAllowance" inputmode="decimal" placeholder="e.g. 5000" />
+                </div>
+                <div class="fg w4">
+                  <label for="rehabMisc">Design / Misc</label>
+                  <input id="rehabMisc" inputmode="decimal" placeholder="e.g. 1500" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed -->
+            <div id="rehabDetailed" style="display:none;margin-top:10px">
+              <div class="split">
+                <span class="small">Enter line items. Contingency is applied to subtotal.</span>
+                <div class="rowBtns">
+                  <button class="miniBtn accent" id="addRehab" type="button">+ Add Item</button>
+                </div>
+              </div>
+
+              <div class="tblWrap" style="margin-top:10px">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Cost</th>
+                      <th class="wide">Scope / Notes</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rehabBody"></tbody>
+                </table>
+              </div>
+
+              <div class="formgrid" style="margin-top:10px">
+                <div class="fg w4">
+                  <label for="contPct">Contingency %</label>
+                  <input id="contPct" inputmode="decimal" placeholder="15" />
+                </div>
+                <div class="fg w4">
+                  <label for="rehabMisc2">Design / Misc</label>
+                  <input id="rehabMisc2" inputmode="decimal" placeholder="e.g. 1500" />
+                </div>
+                <div class="fg w4">
+                  <label for="rehabAllowance2">Allowance (lump sum)</label>
+                  <input id="rehabAllowance2" inputmode="decimal" placeholder="e.g. 5000" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Inspector checklist -->
+            <div id="rehabInspector" style="display:none;margin-top:10px">
+              <div class="note">
+                <b>Inspector mode:</b> Check items found during inspection. Costs are typical Chicago-metro 2026 ranges and auto-add to rehab total.
+                Adjust any line item by tapping the cost.
+              </div>
+              <div class="tblWrap" style="margin-top:10px">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Found?</th>
+                      <th>Item</th>
+                      <th>Typical Cost</th>
+                      <th>Override</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inspBody"></tbody>
+                </table>
+              </div>
+              <div class="formgrid" style="margin-top:10px">
+                <div class="fg w4">
+                  <label for="contPct3">Contingency %</label>
+                  <input id="contPct3" inputmode="decimal" placeholder="15" />
+                </div>
+                <div class="fg w4">
+                  <label for="rehabMisc3">Design / Misc</label>
+                  <input id="rehabMisc3" inputmode="decimal" placeholder="e.g. 1500" />
+                </div>
+                <div class="fg w4">
+                  <label for="rehabAllowance3">Other Allowance</label>
+                  <input id="rehabAllowance3" inputmode="decimal" placeholder="e.g. 5000" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Costs + Financing -->
+          <div class="section">
+            <div class="secTitle">
+              <h3>Costs, Target & Financing</h3>
+              <span class="chip">MAO Logic</span>
+            </div>
+
+            <div class="formgrid">
+              <div class="fg w4">
+                <label for="offerPrice">Offer Price</label>
+                <input id="offerPrice" inputmode="decimal" placeholder="e.g. 250000" />
+              </div>
+
+              <div class="fg w4">
+                <label for="purchaseCostsPct">Purchase Costs %</label>
+                <input id="purchaseCostsPct" inputmode="decimal" placeholder="1" />
+                <div class="hint">Title, recording, attorney, misc (typical 1–2%).</div>
+              </div>
+
+              <div class="fg w4">
+                <label for="profitTarget">Profit Target ($)</label>
+                <input id="profitTarget" inputmode="decimal" placeholder="e.g. 30000" />
+              </div>
+
+              <div class="fg w4">
+                <label for="maoRule">MAO Rule</label>
+                <select id="maoRule">
+                  <option value="custom" selected>Custom (ARV − all costs − profit)</option>
+                  <option value="70">70% Rule (ARV × 70% − Rehab)</option>
+                  <option value="75">75% Rule (ARV × 75% − Rehab)</option>
+                  <option value="80">80% Rule (ARV × 80% − Rehab)</option>
+                </select>
+                <div class="hint">Custom uses your full cost structure; rules give quick sanity check.</div>
+              </div>
+
+              <div class="fg w4">
+                <label for="holdMonths">Hold Months</label>
+                <input id="holdMonths" inputmode="decimal" placeholder="e.g. 4" />
+              </div>
+
+              <div class="fg w4">
+                <label for="sellPct">Selling Costs % (of ARV)</label>
+                <input id="sellPct" inputmode="decimal" placeholder="e.g. 8" />
+                <div class="hint">Buyer agent + transfer tax + staging + credits.</div>
+              </div>
+            </div>
+
+            <div class="secTitle" style="margin-top:14px">
+              <h3 style="font-size:12px;color:var(--muted)">Monthly Holding Cost Detail</h3>
+            </div>
+
+            <div class="formgrid">
+              <div class="fg">
+                <label for="holdTax">Tax / mo</label>
+                <input id="holdTax" inputmode="decimal" placeholder="e.g. 900" />
+              </div>
+              <div class="fg">
+                <label for="holdIns">Insurance / mo</label>
+                <input id="holdIns" inputmode="decimal" placeholder="e.g. 150" />
+              </div>
+              <div class="fg">
+                <label for="holdUtil">Utilities / mo</label>
+                <input id="holdUtil" inputmode="decimal" placeholder="e.g. 250" />
+              </div>
+              <div class="fg">
+                <label for="holdHoa">HOA / mo</label>
+                <input id="holdHoa" inputmode="decimal" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="secTitle" style="margin-top:14px">
+              <h3 style="font-size:12px;color:var(--muted)">Financing</h3>
+            </div>
+
+            <div class="formgrid">
+              <div class="fg w4">
+                <label for="loanAmt">Loan Amount</label>
+                <input id="loanAmt" inputmode="decimal" placeholder="e.g. 200000" />
+              </div>
+              <div class="fg w4">
+                <label for="loanRate">Interest Rate %</label>
+                <input id="loanRate" inputmode="decimal" placeholder="e.g. 10.5" />
+              </div>
+              <div class="fg w4">
+                <label for="loanPoints">Points (% of loan)</label>
+                <input id="loanPoints" inputmode="decimal" placeholder="e.g. 2" />
+              </div>
+              <div class="fg w4">
+                <label for="sellFlat">Selling Flat Fees</label>
+                <input id="sellFlat" inputmode="decimal" placeholder="e.g. 2000" />
+              </div>
+              <div class="fg w4">
+                <label for="holdExtra">Other Holding Extras</label>
+                <input id="holdExtra" inputmode="decimal" placeholder="e.g. 500" />
+              </div>
+              <div class="fg w4">
+                <label>Calc'd Interest Cost</label>
+                <input id="calcInterest" disabled />
+              </div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <!-- Adjustments -->
+          <div class="section">
+            <div class="secTitle">
+              <h3>Adjustments & Credits</h3>
+              <div class="rowBtns">
+                <button class="miniBtn accent" id="addAdj" type="button">+ Add Adjustment</button>
+              </div>
+            </div>
+
+            <div class="tblWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th class="wide">Description</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adjBody"></tbody>
+              </table>
+            </div>
+
+            <div class="note">
+              <b>ADD</b> = extra costs (permits, survey, lien payoff, junk removal).
+              <b>SUB</b> = credits (seller credit, rebate).
+              Net = sum(ADD) − sum(SUB).
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: OUTPUTS -->
+      <div class="rightStack">
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>Results</h2>
+              <p class="sub">Live ARV, MAO, profit, ROI</p>
+            </div>
+            <span class="chip" id="versionChip">v5.0</span>
+          </div>
+          <div class="bd">
+            <div class="kpiGrid">
+              <div class="kpi">
+                <p class="t">After Repair Value (ARV)</p>
+                <p class="v" id="arvOut">$0</p>
+                <p class="mini" id="arvMeta">0 comps selected</p>
+              </div>
+              <div class="kpi">
+                <p class="t">Max Allowable Offer (MAO)</p>
+                <p class="v" id="maoOut">$0</p>
+                <p class="mini" id="maoMeta">Custom rule</p>
+              </div>
+
+              <div class="kpi">
+                <p class="t">Projected Profit (at Offer)</p>
+                <p class="v" id="profitOut">$0</p>
+                <p class="mini" id="profitMeta">—</p>
+              </div>
+              <div class="kpi">
+                <p class="t">Cash-on-Cash ROI</p>
+                <p class="v" id="roiOut">0%</p>
+                <p class="mini" id="roiMeta">Enter loan for accurate ROI</p>
+              </div>
+
+              <div class="kpi">
+                <p class="t">All-in Cost</p>
+                <p class="v" id="allInOut">$0</p>
+                <p class="mini" id="allInMeta">Offer + costs + rehab</p>
+              </div>
+              <div class="kpi">
+                <p class="t">Verdict</p>
+                <div class="badge warn" id="finalBadge"><span class="dot"></span><span id="finalOut">—</span></div>
+                <p class="mini" id="verdictMeta">Awaiting inputs</p>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="formgrid">
+              <div class="fg w6">
+                <label>ARV $/SqFt</label>
+                <input id="pricePerSqftDisplay" disabled />
+              </div>
+              <div class="fg w6">
+                <label>Rehab $/SqFt</label>
+                <input id="rehabPerSqftDisplay" disabled />
+              </div>
+              <div class="fg w6">
+                <label>70% Rule MAO (sanity)</label>
+                <input id="rule70Display" disabled />
+              </div>
+              <div class="fg w6">
+                <label>Annualized ROI</label>
+                <input id="annRoiDisplay" disabled />
+              </div>
+            </div>
+
+            <div id="warningsBox"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>Cost Breakdown</h2>
+              <p class="sub">What MAO is subtracting</p>
+            </div>
+            <span class="chip">Auto</span>
+          </div>
+          <div class="bd">
+            <div class="kpiGrid">
+              <div class="kpi"><p class="t">Rehab Total</p><p class="v" id="rehabOut">$0</p><p class="mini" id="rehabMeta">—</p></div>
+              <div class="kpi"><p class="t">Holding Total</p><p class="v" id="holdOut">$0</p><p class="mini" id="holdMeta">—</p></div>
+              <div class="kpi"><p class="t">Selling Total</p><p class="v" id="sellOut">$0</p><p class="mini" id="sellMeta">—</p></div>
+              <div class="kpi"><p class="t">Loan Costs (int+pts)</p><p class="v" id="loanCostOut">$0</p><p class="mini" id="loanCostMeta">—</p></div>
+              <div class="kpi"><p class="t">Net Adjustments</p><p class="v" id="adjOut">$0</p><p class="mini" id="adjMeta">ADD − SUB</p></div>
+              <div class="kpi"><p class="t">Purchase Costs</p><p class="v" id="buyOut">$0</p><p class="mini" id="buyMeta">% of offer</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rent comparison card -->
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>BRRRR / Rental Check</h2>
+              <p class="sub">If the flip doesn't work, does the rental?</p>
+            </div>
+            <span class="chip">Optional</span>
+          </div>
+          <div class="bd">
+            <div class="formgrid">
+              <div class="fg w6">
+                <label for="rentEst">Estimated Monthly Rent</label>
+                <input id="rentEst" inputmode="decimal" placeholder="e.g. 2800" />
+              </div>
+              <div class="fg w6">
+                <label for="rentExpense">Monthly Expenses (tax+ins+mgmt+maint)</label>
+                <input id="rentExpense" inputmode="decimal" placeholder="e.g. 1300" />
+              </div>
+            </div>
+            <div class="kpiGrid" style="margin-top:10px">
+              <div class="kpi"><p class="t">Monthly Cash Flow</p><p class="v" id="cashflowOut">$0</p><p class="mini" id="cashflowMeta">Rent − expenses</p></div>
+              <div class="kpi"><p class="t">Cap Rate (on ARV)</p><p class="v" id="capRateOut">0%</p><p class="mini">NOI ÷ ARV</p></div>
+              <div class="kpi"><p class="t">1% Rule Check</p><p class="v" id="onePctOut">—</p><p class="mini" id="onePctMeta">Rent / All-in</p></div>
+              <div class="kpi"><p class="t">DSCR Estimate</p><p class="v" id="dscrOut">—</p><p class="mini">Needs &gt; 1.20 for DSCR loan</p></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div class="modalBack" id="libModal">
+    <div class="modal">
+      <div class="hd">
+        <h2>Property Library</h2>
+        <button class="miniBtn" onclick="closeModal('libModal')">Close</button>
+      </div>
+      <div class="bd">
+        <div class="rowBtns" style="margin-bottom:10px">
+          <button class="miniBtn good" id="libSaveNew" title="Save the property currently in the calculator">+ Save Current Property</button>
+          <button class="miniBtn warn" id="libExportAll" title="Download all saved properties as a JSON file">Export All</button>
+          <button class="miniBtn" id="libImport" title="Restore properties from a JSON file">Import</button>
+          <input type="file" id="libImportFile" accept="application/json" style="display:none">
+        </div>
+        <div id="libList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalBack" id="stressModal">
+    <div class="modal" style="max-width:720px">
+      <div class="hd">
+        <h2>Sensitivity / Stress Test</h2>
+        <button class="miniBtn" onclick="closeModal('stressModal')">Close</button>
+      </div>
+      <div class="bd">
+        <div class="note">
+          Shows projected profit if ARV drops or Rehab overruns. Find the deal's breaking points <i>before</i> you make the offer.
+        </div>
+        <div class="tblWrap sensTable">
+          <table>
+            <thead>
+              <tr>
+                <th>↓ ARV / Rehab →</th>
+                <th>−20%</th>
+                <th>−10%</th>
+                <th>0%</th>
+                <th>+10%</th>
+                <th>+20%</th>
+                <th>+30%</th>
+              </tr>
+            </thead>
+            <tbody id="stressBody"></tbody>
+          </table>
+        </div>
+        <div class="note warn" id="stressNote" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // CONFIG
+    // ============================================================
+    const STORAGE_KEY = "arv_calc_pro_v4";
+    const LIBRARY_KEY = "arv_calc_pro_v4_library";
+
+    // Inspector checklist with typical Chicago-metro 2026 prices
+    // Adjust these to your local pricing as you do more deals
+    const INSPECTOR_ITEMS = [
+      { id:"roof_full", label:"Full roof replacement (asphalt)", cost: 14000 },
+      { id:"roof_repair", label:"Roof repair / partial", cost: 3500 },
+      { id:"hvac_full", label:"Full HVAC replacement (furnace+AC)", cost: 11000 },
+      { id:"hvac_furnace", label:"Furnace only", cost: 5500 },
+      { id:"hvac_ac", label:"AC only", cost: 5500 },
+      { id:"wh", label:"Water heater replacement", cost: 1800 },
+      { id:"panel", label:"Electrical panel upgrade (200A)", cost: 3500 },
+      { id:"plumb_repipe", label:"Partial repipe / lead lines", cost: 6500 },
+      { id:"kit_full", label:"Kitchen — full remodel", cost: 22000 },
+      { id:"kit_refresh", label:"Kitchen — refresh (counters+paint+pulls)", cost: 6500 },
+      { id:"bath_full", label:"Bathroom — full remodel (per bath)", cost: 9500 },
+      { id:"bath_refresh", label:"Bathroom — refresh (per bath)", cost: 2800 },
+      { id:"floor_lvp", label:"LVP flooring whole home", cost: 9500 },
+      { id:"floor_carpet", label:"Carpet bedrooms only", cost: 2800 },
+      { id:"paint_int", label:"Interior paint — full", cost: 5500 },
+      { id:"paint_ext", label:"Exterior paint — full", cost: 7500 },
+      { id:"siding", label:"Siding repair / partial", cost: 4500 },
+      { id:"siding_full", label:"Siding replacement", cost: 18000 },
+      { id:"windows", label:"Windows — all (typical 12)", cost: 14000 },
+      { id:"windows_partial", label:"Windows — partial (4-6)", cost: 5500 },
+      { id:"deck_repair", label:"Deck repair + restain", cost: 2200 },
+      { id:"deck_rebuild", label:"Deck rebuild", cost: 9000 },
+      { id:"foundation", label:"Foundation repair / crack injection", cost: 4500 },
+      { id:"mold", label:"Mold remediation (typical scope)", cost: 3500 },
+      { id:"sewer", label:"Sewer line repair", cost: 6500 },
+      { id:"sump", label:"Sump pump + backup", cost: 1800 },
+      { id:"radon", label:"Radon mitigation system", cost: 1500 },
+      { id:"basement_finish", label:"Basement finish (typical)", cost: 18000 },
+      { id:"drywall", label:"Drywall patching + texture", cost: 2500 },
+      { id:"trim", label:"Trim + doors refresh", cost: 3500 },
+      { id:"landscape", label:"Landscaping refresh", cost: 2500 },
+      { id:"junk", label:"Junk removal / cleanout", cost: 1500 },
+      { id:"appliance", label:"Appliance package", cost: 3500 },
+      { id:"lighting", label:"Lighting upgrade", cost: 1500 },
+      { id:"garage_door", label:"Garage door", cost: 1500 }
+    ];
+
+    let arvMethod = "avg"; // avg | median | psfmedian | weighted
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    const $ = (id) => document.getElementById(id);
+    const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
+
+    function num(id, def=0){
+      const el = $(id);
+      if (!el) return def;
+      const raw = (el.value ?? "").toString().replace(/,/g,"").trim();
+      if (raw === "") return def;
+      const x = Number(raw);
+      return Number.isFinite(x) ? x : def;
+    }
+
+    function money0(n){
+      const x = Number(n);
+      if (!Number.isFinite(x)) return "$0";
+      const neg = x < 0;
+      const abs = Math.abs(Math.round(x));
+      const s = "$" + abs.toLocaleString();
+      return neg ? "-" + s : s;
+    }
+    function money2(n){
+      const x = Number(n);
+      if (!Number.isFinite(x)) return "$0.00";
+      const neg = x < 0;
+      const abs = Math.abs(x);
+      const s = "$" + abs.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+      return neg ? "-" + s : s;
+    }
+    function pct2(n){
+      const x = Number(n);
+      if (!Number.isFinite(x)) return "0%";
+      return x.toFixed(2) + "%";
+    }
+    function safeStr(s){ return (s ?? "").toString().trim(); }
+
+    function median(arr){
+      if (!arr.length) return 0;
+      const s = arr.slice().sort((a,b)=>a-b);
+      const m = Math.floor(s.length/2);
+      return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+    }
+
+    function setStatus(text){
+      const el = $("calcStatus");
+      if (!el) return;
+      el.textContent = text;
+      clearTimeout(setStatus._t);
+      setStatus._t = setTimeout(()=>{ if($("calcStatus")) $("calcStatus").textContent="Ready"; }, 900);
+    }
+
+    // Parse date strings flexibly: MM/YYYY, MM/DD/YYYY, YYYY-MM-DD
+    function parseCompDate(s){
+      const v = safeStr(s);
+      if (!v) return null;
+      // MM/YYYY
+      let m = v.match(/^(\d{1,2})[\/\-](\d{4})$/);
+      if (m){ return new Date(Number(m[2]), Number(m[1])-1, 15); }
+      // MM/DD/YYYY
+      m = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m){ return new Date(Number(m[3]), Number(m[1])-1, Number(m[2])); }
+      // YYYY-MM-DD
+      m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m){ return new Date(Number(m[1]), Number(m[2])-1, Number(m[3])); }
+      const d = new Date(v);
+      if (!isNaN(d.getTime())) return d;
+      return null;
+    }
+
+    function monthsAgo(date){
+      if (!date) return null;
+      const now = new Date();
+      return (now.getFullYear() - date.getFullYear())*12 + (now.getMonth() - date.getMonth());
+    }
+
+    // ============================================================
+    // DYNAMIC ROWS
+    // ============================================================
+    function compRow(data={}){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input type="checkbox" class="c_use" ${data.use ? "checked":""} /></td>
+        <td><input class="c_price" inputmode="decimal" placeholder="0" value="${data.price ?? ""}"/></td>
+        <td><input class="c_adj" inputmode="decimal" placeholder="0" value="${data.adj ?? ""}"/></td>
+        <td class="c_adjprice">$0</td>
+        <td><input class="c_sqft tiny" inputmode="decimal" placeholder="0" value="${data.sqft ?? ""}"/></td>
+        <td class="c_psf">$0</td>
+        <td class="c_apsf">$0</td>
+        <td><input class="c_dist micro" inputmode="decimal" placeholder="0.3" value="${data.dist ?? ""}"/></td>
+        <td><input class="c_date tiny" placeholder="MM/YYYY" value="${data.date ?? ""}"/></td>
+        <td class="c_quality"><span class="chip">—</span></td>
+        <td><input class="c_notes wide" placeholder="renovated, 2-car garage, finished basement..." value="${data.notes ?? ""}"/></td>
+        <td>
+          <div class="rowBtns">
+            <button class="miniBtn danger c_del" type="button">×</button>
+          </div>
+        </td>
+      `;
+      tr.querySelectorAll("input").forEach(inp=>{
+        inp.addEventListener("input", ()=>{recalc(); setStatus("Calculating…");});
+        inp.addEventListener("change", ()=>{recalc(); setStatus("Calculating…");});
+      });
+      tr.querySelector(".c_del").addEventListener("click", ()=>{
+        tr.remove(); recalc(); setStatus("Comp removed");
+      });
+      return tr;
+    }
+
+    function rehabRow(data={}){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <select class="r_cat">
+            ${["Kitchen","Baths","Floors","Paint","Roof","Windows","HVAC","Plumbing","Electrical","Basement","Exterior","Deck","Landscaping","Foundation","Mold","Sewer","Sump/Radon","Junk Removal","Permits","Other"]
+              .map(x=>`<option ${data.cat===x?"selected":""}>${x}</option>`).join("")}
+          </select>
+        </td>
+        <td><input class="r_cost" inputmode="decimal" placeholder="0" value="${data.cost ?? ""}"/></td>
+        <td><input class="r_notes wide" placeholder="scope details" value="${data.notes ?? ""}"/></td>
+        <td><button class="miniBtn danger r_del" type="button">×</button></td>
+      `;
+      tr.querySelectorAll("input,select").forEach(inp=>{
+        inp.addEventListener("input", ()=>{recalc(); setStatus("Calculating…");});
+        inp.addEventListener("change", ()=>{recalc(); setStatus("Calculating…");});
+      });
+      tr.querySelector(".r_del").addEventListener("click", ()=>{
+        tr.remove(); recalc(); setStatus("Item removed");
+      });
+      return tr;
+    }
+
+    function adjRow(data={}){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <select class="a_type">
+            <option ${data.type==="ADD"?"selected":""}>ADD</option>
+            <option ${data.type==="SUB"?"selected":""}>SUB</option>
+          </select>
+        </td>
+        <td><input class="a_amt" inputmode="decimal" placeholder="0" value="${data.amt ?? ""}"/></td>
+        <td><input class="a_desc wide" placeholder="permit fees / seller credit / etc." value="${data.desc ?? ""}"/></td>
+        <td><button class="miniBtn danger a_del" type="button">×</button></td>
+      `;
+      tr.querySelectorAll("input,select").forEach(inp=>{
+        inp.addEventListener("input", ()=>{recalc(); setStatus("Calculating…");});
+        inp.addEventListener("change", ()=>{recalc(); setStatus("Calculating…");});
+      });
+      tr.querySelector(".a_del").addEventListener("click", ()=>{
+        tr.remove(); recalc(); setStatus("Adjustment removed");
+      });
+      return tr;
+    }
+
+    function inspectorRow(item, saved={}){
+      const tr = document.createElement("tr");
+      tr.dataset.id = item.id;
+      tr.innerHTML = `
+        <td><input type="checkbox" class="i_use" ${saved.use ? "checked":""} /></td>
+        <td><span class="small" style="color:var(--text)">${item.label}</span></td>
+        <td>${money0(item.cost)}</td>
+        <td><input class="i_override tiny" inputmode="decimal" placeholder="${item.cost}" value="${saved.override ?? ""}"/></td>
+      `;
+      tr.querySelectorAll("input").forEach(inp=>{
+        inp.addEventListener("input", ()=>{recalc(); setStatus("Calculating…");});
+        inp.addEventListener("change", ()=>{recalc(); setStatus("Calculating…");});
+      });
+      return tr;
+    }
+
+    // ============================================================
+    // COMP QUALITY & FLAGGING
+    // ============================================================
+    function evaluateComps(){
+      const subjectSqft = num("sqft",0);
+      const rows = Array.from($("compBody").querySelectorAll("tr"));
+      const warnings = [];
+      const usable = [];
+
+      rows.forEach(r=>{
+        r.classList.remove("compFlag","compStale");
+
+        const useEl = r.querySelector(".c_use");
+        const priceEl = r.querySelector(".c_price");
+        const sold = Number((priceEl.value||"").replace(/,/g,"")) || 0;
+        const adj = Number((r.querySelector(".c_adj").value||"").replace(/,/g,"")) || 0;
+        const adjPrice = sold + adj;
+        const sqft = Number((r.querySelector(".c_sqft").value||"").replace(/,/g,"")) || 0;
+        const dist = Number((r.querySelector(".c_dist").value||"").replace(/,/g,"")) || 0;
+        const dateStr = r.querySelector(".c_date").value || "";
+
+        // Display calculated fields
+        r.querySelector(".c_adjprice").textContent = sold>0 ? money0(adjPrice) : "$0";
+        r.querySelector(".c_psf").textContent = (sold>0 && sqft>0) ? money0(sold/sqft) : "$0";
+        r.querySelector(".c_apsf").textContent = (adjPrice>0 && sqft>0) ? money0(adjPrice/sqft) : "$0";
+
+        const qualityCell = r.querySelector(".c_quality");
+        const issues = [];
+        let qualityClass = "good";
+        let qualityText = "Good";
+
+        if (sold > 0){
+          // Distance check
+          if (dist > 1.0){ issues.push("Far"); qualityClass = "warn"; }
+          else if (dist > 0.5){ if (qualityClass==="good") qualityClass = "warn"; }
+
+          // Sqft variance check
+          if (subjectSqft > 0 && sqft > 0){
+            const variance = Math.abs(sqft - subjectSqft) / subjectSqft;
+            if (variance > 0.30){ issues.push("Size"); qualityClass = "warn"; }
+            else if (variance > 0.20){ if (qualityClass==="good") qualityClass = "warn"; }
+          }
+
+          // Date check
+          const d = parseCompDate(dateStr);
+          if (d){
+            const ma = monthsAgo(d);
+            if (ma !== null){
+              if (ma > 12){ issues.push("Stale"); qualityClass = "bad"; r.classList.add("compStale"); }
+              else if (ma > 6){ issues.push("Old"); if (qualityClass==="good") qualityClass = "warn"; }
+            }
+          } else if (dateStr.length > 0){
+            issues.push("Bad date");
+            qualityClass = "warn";
+          }
+
+          if (qualityClass !== "good"){ r.classList.add("compFlag"); }
+
+          if (issues.length){
+            qualityText = issues.join(", ");
+          } else {
+            qualityText = "Good";
+          }
+        } else {
+          qualityText = "—";
+          qualityClass = "";
+        }
+
+        const chipClass = qualityClass ? `chip ${qualityClass}` : "chip";
+        qualityCell.innerHTML = `<span class="${chipClass}">${qualityText}</span>`;
+
+        if (useEl.checked && adjPrice > 0 && sqft > 0){
+          usable.push({ adjPrice, sqft, dist, sold });
+        }
+      });
+
+      // Outlier detection
+      if (usable.length >= 3){
+        const adjPrices = usable.map(c => c.adjPrice);
+        const med = median(adjPrices);
+        const outliers = adjPrices.filter(p => p > med * 1.5 || p < med * 0.6);
+        if (outliers.length){
+          warnings.push(`Outlier comp detected (>50% above or 40% below median). Review your comp selection.`);
+        }
+      }
+
+      return { usable, warnings };
+    }
+
+    function getArvFromComps(usable){
+      const subjectSqft = num("sqft",0);
+      if (!usable.length) return { arv:0, method:arvMethod };
+
+      switch (arvMethod){
+        case "median": {
+          const arv = median(usable.map(c=>c.adjPrice));
+          return { arv, method:"median" };
+        }
+        case "psfmedian": {
+          if (!subjectSqft) return { arv:0, method:"psfmedian", noSqft:true };
+          const psfs = usable.map(c=> c.adjPrice / c.sqft);
+          const medPsf = median(psfs);
+          return { arv: medPsf * subjectSqft, method:"psfmedian", psf:medPsf };
+        }
+        case "weighted": {
+          // Weight by 1/(distance+0.1) — closer comps weigh more
+          let totalW = 0, weighted = 0;
+          usable.forEach(c=>{
+            const w = 1/((c.dist||0.5) + 0.1);
+            totalW += w;
+            weighted += c.adjPrice * w;
+          });
+          return { arv: totalW ? weighted/totalW : 0, method:"weighted" };
+        }
+        case "avg":
+        default: {
+          const sum = usable.reduce((a,c)=>a+c.adjPrice, 0);
+          return { arv: sum/usable.length, method:"avg" };
+        }
+      }
+    }
+
+    // ============================================================
+    // CORE CALCS
+    // ============================================================
+    function getRehabTotal(){
+      const mode = $("rehabMode").value;
+      const sqft = num("sqft",0);
+
+      if (mode === "quick"){
+        const per = num("rehabPerSqft", 0);
+        const allowance = num("rehabAllowance", 0);
+        const misc = num("rehabMisc", 0);
+        const base = (sqft>0 ? per*sqft : 0) + allowance + misc;
+        return Math.max(0, base);
+      } else if (mode === "detailed"){
+        const rows = Array.from($("rehabBody").querySelectorAll("tr"));
+        const subtotal = rows.reduce((acc,r)=>{
+          const c = Number((r.querySelector(".r_cost").value||"").replace(/,/g,"")) || 0;
+          return acc + c;
+        },0);
+        const cont = clamp(num("contPct",15),0,50) / 100;
+        const misc = num("rehabMisc2",0);
+        const allowance = num("rehabAllowance2",0);
+        const total = subtotal + (subtotal*cont) + misc + allowance;
+        return Math.max(0,total);
+      } else if (mode === "inspector"){
+        const rows = Array.from($("inspBody").querySelectorAll("tr"));
+        let subtotal = 0;
+        rows.forEach(r=>{
+          const use = r.querySelector(".i_use").checked;
+          if (!use) return;
+          const override = Number((r.querySelector(".i_override").value||"").replace(/,/g,""));
+          const id = r.dataset.id;
+          const item = INSPECTOR_ITEMS.find(i=>i.id===id);
+          if (!item) return;
+          subtotal += (Number.isFinite(override) && override>0) ? override : item.cost;
+        });
+        const cont = clamp(num("contPct3",15),0,50) / 100;
+        const misc = num("rehabMisc3",0);
+        const allowance = num("rehabAllowance3",0);
+        return Math.max(0, subtotal + (subtotal*cont) + misc + allowance);
+      }
+      return 0;
+    }
+
+    function getMonthlyHolding(){
+      return num("holdTax",0) + num("holdIns",0) + num("holdUtil",0) + num("holdHoa",0);
+    }
+
+    function getLoanCosts(){
+      const loan = num("loanAmt",0);
+      const rate = num("loanRate",0);
+      const points = num("loanPoints",0);
+      const months = num("holdMonths",0);
+
+      // Interest-only model (typical for hard money flips)
+      // Monthly interest = loan * (rate/12)
+      const monthlyInt = loan * (rate/100/12);
+      const totalInt = monthlyInt * months;
+      const pointCost = loan * (points/100);
+      return { totalInt, pointCost, total: totalInt + pointCost, monthlyInt };
+    }
+
+    function getHoldingTotal(){
+      const months = num("holdMonths",0);
+      const monthly = getMonthlyHolding();
+      const extra = num("holdExtra",0);
+      const loan = getLoanCosts();
+      return Math.max(0, months*monthly + extra + loan.total);
+    }
+
+    function getSellingTotal(arv){
+      const pct = clamp(num("sellPct",8),0,20) / 100;
+      const flat = num("sellFlat",0);
+      return Math.max(0, arv*pct + flat);
+    }
+
+    function getNetAdjustments(){
+      const rows = Array.from($("adjBody").querySelectorAll("tr"));
+      let add=0, sub=0;
+      rows.forEach(r=>{
+        const type = r.querySelector(".a_type").value;
+        const amt = Number((r.querySelector(".a_amt").value||"").replace(/,/g,"")) || 0;
+        if (type==="ADD") add += amt;
+        else sub += amt;
+      });
+      return (add - sub);
+    }
+
+    function computeMAO(arv, rehab, holding, selling, profitTarget, netAdj, purchaseCosts){
+      const rule = $("maoRule").value;
+      if (rule === "70") return arv*0.70 - rehab;
+      if (rule === "75") return arv*0.75 - rehab;
+      if (rule === "80") return arv*0.80 - rehab;
+      // Custom: ARV minus everything except offer itself
+      return arv - (rehab + holding + selling + profitTarget + netAdj + purchaseCosts);
+    }
+
+    function updateRehabBadge(rehabTotal){
+      const sqft = num("sqft",0);
+      const per = sqft>0 ? (rehabTotal/sqft) : 0;
+      $("rehabPerSqftDisplay").value = sqft>0 ? money2(per) : "$0.00";
+
+      let level="—", cls="warn";
+      if (sqft>0 && rehabTotal>0){
+        if (per <= 35) { level="Cosmetic"; cls="pass"; }
+        else if (per <= 65) { level="Medium"; cls="warn"; }
+        else { level="Heavy"; cls="fail"; }
+      }
+      $("rehabLevel").textContent = level;
+      const badge = $("rehabBadge");
+      badge.classList.remove("pass","fail","warn");
+      badge.classList.add(cls);
+
+      const chipText = ({quick:"Quick Estimate", detailed:"Detailed Rehab", inspector:"Inspector Checklist"})[$("rehabMode").value] || "Rehab";
+      $("rehabChip").textContent = chipText;
+    }
+
+    function recalc(){
+      // Comps
+      const compEval = evaluateComps();
+      const { arv, method, psf, noSqft } = getArvFromComps(compEval.usable);
+
+      $("arvOut").textContent = money0(arv);
+
+      const compsUsed = compEval.usable.length;
+      let methodLabel = "Avg";
+      if (method==="median") methodLabel = "Median";
+      else if (method==="psfmedian") methodLabel = "Median $/sqft";
+      else if (method==="weighted") methodLabel = "Distance-weighted";
+
+      let metaText = `${compsUsed} comp${compsUsed===1?"":"s"} • ${methodLabel}`;
+      if (method==="psfmedian" && noSqft) metaText += " (need subject sqft)";
+      if (method==="psfmedian" && psf) metaText += ` (${money0(psf)}/sqft)`;
+      $("arvMeta").textContent = metaText;
+
+      const offer = num("offerPrice",0);
+      const buyPct = clamp(num("purchaseCostsPct",1),0,10)/100;
+      const purchaseCosts = Math.max(0, offer*buyPct);
+
+      const rehab = getRehabTotal();
+      const holding = getHoldingTotal();
+      const selling = getSellingTotal(arv);
+      const netAdj = getNetAdjustments();
+      const profitTarget = num("profitTarget",30000);
+      const loanCosts = getLoanCosts();
+
+      $("calcInterest").value = loanCosts.total>0 ? money0(loanCosts.total) : "";
+
+      const mao = computeMAO(arv, rehab, holding, selling, profitTarget, netAdj, purchaseCosts);
+      $("maoOut").textContent = money0(mao);
+
+      const rule = $("maoRule").value;
+      $("maoMeta").textContent = rule==="custom"
+        ? "Custom: ARV − all costs − target profit"
+        : `${rule}% Rule: ARV × ${rule}% − Rehab`;
+
+      const allIn = offer + rehab + holding + selling + netAdj + purchaseCosts;
+      $("allInOut").textContent = money0(allIn);
+
+      const projectedProfit = arv - allIn;
+      const profOutEl = $("profitOut");
+      profOutEl.textContent = money0(projectedProfit);
+      profOutEl.classList.toggle("neg", projectedProfit < 0);
+      profOutEl.classList.toggle("pos", projectedProfit >= profitTarget && projectedProfit > 0);
+
+      // Cash-on-cash ROI (proper calculation)
+      const loan = num("loanAmt",0);
+      const cashInvested = Math.max(0, allIn - loan);
+      const roi = cashInvested>0 ? (projectedProfit / cashInvested)*100 : 0;
+      $("roiOut").textContent = pct2(roi);
+      $("roiMeta").textContent = cashInvested>0
+        ? `Cash invested ≈ ${money0(cashInvested)}`
+        : "Enter offer + costs to estimate";
+
+      // Annualized ROI
+      const months = Math.max(1, num("holdMonths",0));
+      const annRoi = months>0 ? (roi * 12 / months) : 0;
+      $("annRoiDisplay").value = pct2(annRoi);
+
+      // Price/sqft
+      const sqft = num("sqft",0);
+      const psfArv = sqft>0 ? (arv/sqft) : 0;
+      $("pricePerSqftDisplay").value = sqft>0 ? money2(psfArv) : "$0.00";
+
+      // 70% rule sanity
+      const rule70 = arv*0.70 - rehab;
+      $("rule70Display").value = arv>0 ? money0(rule70) : "$0";
+
+      // Breakdown
+      $("rehabOut").textContent = money0(rehab);
+      $("holdOut").textContent = money0(holding - loanCosts.total);
+      $("sellOut").textContent = money0(selling);
+      $("loanCostOut").textContent = money0(loanCosts.total);
+      $("adjOut").textContent = money0(netAdj);
+      $("buyOut").textContent = money0(purchaseCosts);
+
+      $("rehabMeta").textContent = ({quick:"Quick = $/sqft + allowance + misc", detailed:"Detailed = items + contingency", inspector:"Inspector findings"})[$("rehabMode").value];
+      $("holdMeta").textContent = `${num("holdMonths",0)} mo × ${money0(getMonthlyHolding())} + extras`;
+      $("sellMeta").textContent = `${clamp(num("sellPct",8),0,20)}% of ARV + flat`;
+      $("buyMeta").textContent = `${clamp(num("purchaseCostsPct",1),0,10)}% of offer`;
+      $("loanCostMeta").textContent = loanCosts.total>0 ? `${months}mo int + ${money0(loanCosts.pointCost)} pts` : "—";
+
+      // Rehab badge
+      updateRehabBadge(rehab);
+
+      // Rental analysis
+      const rentEst = num("rentEst",0);
+      const rentExp = num("rentExpense",0);
+      const cashflow = rentEst - rentExp;
+      $("cashflowOut").textContent = money0(cashflow);
+      const cashflowEl = $("cashflowOut");
+      cashflowEl.classList.toggle("neg", cashflow < 0);
+      cashflowEl.classList.toggle("pos", cashflow > 0);
+
+      const noi = (rentEst - (rentExp - 0)) * 12; // annual NOI roughly
+      const capRate = arv>0 ? (noi/arv)*100 : 0;
+      $("capRateOut").textContent = pct2(capRate);
+
+      const onePct = allIn>0 ? (rentEst/allIn)*100 : 0;
+      $("onePctOut").textContent = pct2(onePct);
+      $("onePctMeta").textContent = onePct>=1 ? "✓ Passes 1% rule" : "Below 1% rule";
+
+      const monthlyDebtSvc = loanCosts.monthlyInt || 1;
+      const dscr = (rentEst-rentExp) / monthlyDebtSvc;
+      $("dscrOut").textContent = monthlyDebtSvc>0 ? dscr.toFixed(2) : "—";
+
+      // Verdict — fixed logic
+      let verdict="—", cls="warn", meta="Enter ARV + offer to evaluate";
+      if (arv > 0 && offer > 0){
+        const passProfit = projectedProfit >= profitTarget;
+        const passOffer = offer <= mao;
+        if (passProfit && passOffer){
+          verdict="PASS"; cls="pass";
+          meta="Meets target profit and offer ≤ MAO";
+        } else if (!passProfit && !passOffer){
+          verdict="FAIL"; cls="fail";
+          meta=`Offer ${money0(offer-mao)} over MAO; profit ${money0(projectedProfit-profitTarget)} below target`;
+        } else if (!passOffer){
+          verdict="FAIL"; cls="fail";
+          meta=`Offer is ${money0(offer-mao)} above MAO`;
+        } else {
+          verdict="FAIL"; cls="fail";
+          meta=`Profit is ${money0(profitTarget-projectedProfit)} below target`;
+        }
+      } else if (arv > 0 && offer === 0){
+        verdict="NO OFFER"; cls="warn";
+        meta="Enter an offer to test against MAO";
+      } else if (arv === 0){
+        verdict="NEED COMPS"; cls="warn";
+        meta="Add comps to calculate ARV";
+      }
+      $("finalOut").textContent = verdict;
+      const fb = $("finalBadge");
+      fb.classList.remove("pass","fail","warn");
+      fb.classList.add(cls);
+      $("verdictMeta").textContent = meta;
+
+      $("profitMeta").textContent = `Target ${money0(profitTarget)} • All-in ${money0(allIn)}`;
+
+      // Warnings box
+      const warnBox = $("warningsBox");
+      warnBox.innerHTML = "";
+      const warningsList = [...compEval.warnings];
+
+      if (compsUsed < 3 && compsUsed > 0){
+        warningsList.push("Only " + compsUsed + " comp(s) selected. Aim for 3-6 for reliability.");
+      }
+      if (compsUsed === 0 && arv === 0){
+        // Already covered by verdict
+      }
+      if (mao < 0){
+        warningsList.push("MAO is negative — this deal cannot be profitable at any offer with current cost assumptions.");
+      }
+      if (rehab > arv*0.5 && arv > 0){
+        warningsList.push("Rehab is more than 50% of ARV — heavy lift, verify scope carefully.");
+      }
+      if (num("holdMonths",0) === 0 && offer > 0){
+        warningsList.push("Hold months is 0 — holding costs not modeled. Add realistic timeline.");
+      }
+      if (loan > 0 && num("loanRate",0) === 0){
+        warningsList.push("Loan amount entered but no rate — interest cost not calculated.");
+      }
+      if (num("sellPct",8) === 0 && offer > 0){
+        warningsList.push("Selling % is 0 — buyer agent/transfer tax not modeled.");
+      }
+
+      if (warningsList.length){
+        warnBox.innerHTML = warningsList.map(w => `<div class="note warn">⚠ ${w}</div>`).join("");
+      }
+    }
+
+    // ============================================================
+    // SNAPSHOT + PERSISTENCE
+    // ============================================================
+    function snapshotData(){
+      const comps = Array.from($("compBody").querySelectorAll("tr")).map(r=>({
+        use: r.querySelector(".c_use").checked,
+        price: r.querySelector(".c_price").value || "",
+        adj: r.querySelector(".c_adj").value || "",
+        sqft: r.querySelector(".c_sqft").value || "",
+        dist: r.querySelector(".c_dist").value || "",
+        date: r.querySelector(".c_date").value || "",
+        notes: r.querySelector(".c_notes").value || ""
+      }));
+
+      const rehabItems = Array.from($("rehabBody").querySelectorAll("tr")).map(r=>({
+        cat: r.querySelector(".r_cat").value,
+        cost: r.querySelector(".r_cost").value || "",
+        notes: r.querySelector(".r_notes").value || ""
+      }));
+
+      const inspItems = Array.from($("inspBody").querySelectorAll("tr")).map(r=>({
+        id: r.dataset.id,
+        use: r.querySelector(".i_use").checked,
+        override: r.querySelector(".i_override").value || ""
+      }));
+
+      const adjs = Array.from($("adjBody").querySelectorAll("tr")).map(r=>({
+        type: r.querySelector(".a_type").value,
+        amt: r.querySelector(".a_amt").value || "",
+        desc: r.querySelector(".a_desc").value || ""
+      }));
+
+      return {
+        version: "4.0",
+        savedAt: new Date().toISOString(),
+        arvMethod,
+        property:{
+          address: $("address").value || "",
+          ptype: $("ptype").value || "",
+          sqft: $("sqft").value || "",
+          beds: $("beds").value || "",
+          baths: $("baths").value || "",
+          yearBuilt: $("yearBuilt").value || "",
+          lotSize: $("lotSize").value || "",
+          garage: $("garage").value || "",
+          condition: $("condition").value || "",
+          notes: $("notes").value || ""
+        },
+        comps,
+        rehab:{
+          mode: $("rehabMode").value,
+          quick:{
+            rehabPerSqft: $("rehabPerSqft").value || "",
+            rehabAllowance: $("rehabAllowance").value || "",
+            rehabMisc: $("rehabMisc").value || ""
+          },
+          detailed:{
+            contPct: $("contPct").value || "",
+            rehabMisc2: $("rehabMisc2").value || "",
+            rehabAllowance2: $("rehabAllowance2").value || "",
+            items: rehabItems
+          },
+          inspector:{
+            contPct3: $("contPct3").value || "",
+            rehabMisc3: $("rehabMisc3").value || "",
+            rehabAllowance3: $("rehabAllowance3").value || "",
+            items: inspItems
+          }
+        },
+        costs:{
+          offerPrice: $("offerPrice").value || "",
+          purchaseCostsPct: $("purchaseCostsPct").value || "",
+          profitTarget: $("profitTarget").value || "",
+          maoRule: $("maoRule").value || "custom",
+          holdMonths: $("holdMonths").value || "",
+          holdTax: $("holdTax").value || "",
+          holdIns: $("holdIns").value || "",
+          holdUtil: $("holdUtil").value || "",
+          holdHoa: $("holdHoa").value || "",
+          holdExtra: $("holdExtra").value || "",
+          sellPct: $("sellPct").value || "",
+          sellFlat: $("sellFlat").value || "",
+          loanAmt: $("loanAmt").value || "",
+          loanRate: $("loanRate").value || "",
+          loanPoints: $("loanPoints").value || ""
+        },
+        adjustments: adjs,
+        rental:{
+          rentEst: $("rentEst").value || "",
+          rentExpense: $("rentExpense").value || ""
+        }
+      };
+    }
+
+    function applySnapshot(data){
+      data = data || {};
+      const p = data.property || {};
+      $("address").value = p.address || "";
+      $("ptype").value = p.ptype || "Single Family";
+      $("sqft").value = p.sqft || "";
+      $("beds").value = p.beds || "";
+      $("baths").value = p.baths || "";
+      $("yearBuilt").value = p.yearBuilt || "";
+      $("lotSize").value = p.lotSize || "";
+      $("garage").value = p.garage || "";
+      $("condition").value = p.condition || "average";
+      $("notes").value = p.notes || "";
+
+      arvMethod = data.arvMethod || "avg";
+      document.querySelectorAll(".pill[data-method]").forEach(p=>{
+        p.classList.toggle("active", p.dataset.method === arvMethod);
+      });
+
+      // comps
+      $("compBody").innerHTML = "";
+      (data.comps && data.comps.length ? data.comps : []).forEach(c=> $("compBody").appendChild(compRow(c)));
+
+      // rehab
+      const r = data.rehab || {};
+      $("rehabMode").value = r.mode || "quick";
+
+      const q = (r.quick || {});
+      $("rehabPerSqft").value = q.rehabPerSqft || "";
+      $("rehabAllowance").value = q.rehabAllowance || "";
+      $("rehabMisc").value = q.rehabMisc || "";
+
+      const d = (r.detailed || {});
+      $("contPct").value = d.contPct || "15";
+      $("rehabMisc2").value = d.rehabMisc2 || "";
+      $("rehabAllowance2").value = d.rehabAllowance2 || "";
+
+      $("rehabBody").innerHTML = "";
+      (d.items || []).forEach(it=> $("rehabBody").appendChild(rehabRow(it)));
+
+      // inspector
+      const ins = (r.inspector || {});
+      $("contPct3").value = ins.contPct3 || "15";
+      $("rehabMisc3").value = ins.rehabMisc3 || "";
+      $("rehabAllowance3").value = ins.rehabAllowance3 || "";
+
+      buildInspectorList(ins.items || []);
+
+      // costs
+      const c = data.costs || {};
+      $("offerPrice").value = c.offerPrice || "";
+      $("purchaseCostsPct").value = c.purchaseCostsPct || "1";
+      $("profitTarget").value = c.profitTarget || "30000";
+      $("maoRule").value = c.maoRule || "custom";
+      $("holdMonths").value = c.holdMonths || "";
+      $("holdTax").value = c.holdTax || "";
+      $("holdIns").value = c.holdIns || "";
+      $("holdUtil").value = c.holdUtil || "";
+      $("holdHoa").value = c.holdHoa || "";
+      $("holdExtra").value = c.holdExtra || "";
+      $("sellPct").value = c.sellPct || "8";
+      $("sellFlat").value = c.sellFlat || "";
+      $("loanAmt").value = c.loanAmt || "";
+      $("loanRate").value = c.loanRate || "";
+      $("loanPoints").value = c.loanPoints || "";
+
+      // adjustments
+      $("adjBody").innerHTML = "";
+      (data.adjustments || []).forEach(a=> $("adjBody").appendChild(adjRow(a)));
+
+      // rental
+      const rn = data.rental || {};
+      $("rentEst").value = rn.rentEst || "";
+      $("rentExpense").value = rn.rentExpense || "";
+
+      syncRehabModeUI();
+      recalc();
+    }
+
+    function buildInspectorList(saved=[]){
+      const body = $("inspBody");
+      body.innerHTML = "";
+      const savedMap = {};
+      saved.forEach(s=>{ savedMap[s.id] = s; });
+      INSPECTOR_ITEMS.forEach(item=>{
+        body.appendChild(inspectorRow(item, savedMap[item.id] || {}));
+      });
+    }
+
+    function saveLocal(){
+      // Save to library by name (clearer UX than silent slot save)
+      const addr = ($("address").value || "").trim();
+      const defaultName = addr || "Untitled property " + new Date().toLocaleDateString();
+      const name = prompt("Save this property to your Library.\nEnter a name (or address):", defaultName);
+      if (name === null) return; // user cancelled
+      const trimmed = name.trim();
+      if (!trimmed){ alert("Name cannot be empty."); return; }
+
+      // If address field is empty, populate it with the name so library list shows it
+      if (!addr){
+        $("address").value = trimmed;
+      }
+
+      const data = snapshotData();
+      // Override the address used for library matching with the chosen name
+      data._libName = trimmed;
+
+      const lib = getLibrary();
+      // Match by library name OR by address — whichever was set
+      const matchKey = trimmed.toLowerCase();
+      const existingIdx = lib.findIndex(e => {
+        const n = (e._libName || e.property?.address || "").trim().toLowerCase();
+        return n === matchKey;
+      });
+
+      if (existingIdx >= 0){
+        if (!confirm(`"${trimmed}" already exists in your Library. Overwrite?`)) return;
+        lib[existingIdx] = data;
+      } else {
+        lib.push(data);
+      }
+      setLibrary(lib);
+      setStatus("Saved to Library ✓");
+      alert(`Saved "${trimmed}" to your Library.\n\nClick "Library" anytime to load it back, edit, or compare with other properties.`);
+    }
+
+    function resetAll(){
+      if (!confirm("Reset will clear ALL fields on screen.\n\nThis does NOT delete anything from your Library — saved properties are safe.\n\nContinue?")) return;
+
+      // Pause auto-save during reset so it doesn't immediately re-save the cleared state
+      _resetting = true;
+
+      // Clear the auto-restore slot
+      localStorage.removeItem(STORAGE_KEY);
+
+      // Clear every input, select, and textarea in the form
+      const root = document.querySelector(".wrap");
+      root.querySelectorAll("input").forEach(el => {
+        if (el.type === "checkbox") { el.checked = false; }
+        else if (el.type === "file") { /* skip */ }
+        else { el.value = ""; }
+      });
+      root.querySelectorAll("textarea").forEach(el => { el.value = ""; });
+      root.querySelectorAll("select").forEach(el => {
+        // Reset to first option
+        el.selectedIndex = 0;
+      });
+
+      // Reset specific selects to their intended defaults
+      $("ptype").value = "Single Family";
+      $("condition").value = "average";
+      $("rehabMode").value = "quick";
+      $("maoRule").value = "custom";
+
+      // Reset ARV method
+      arvMethod = "avg";
+      document.querySelectorAll(".pill[data-method]").forEach(p=>{
+        p.classList.toggle("active", p.dataset.method === "avg");
+      });
+
+      // Rebuild seed rows (3 empty comps, 2 empty rehab items, 0 adjustments)
+      $("compBody").innerHTML = "";
+      $("compBody").appendChild(compRow({use:true}));
+      $("compBody").appendChild(compRow({use:true}));
+      $("compBody").appendChild(compRow({use:true}));
+
+      $("rehabBody").innerHTML = "";
+      $("rehabBody").appendChild(rehabRow({cat:"Kitchen"}));
+      $("rehabBody").appendChild(rehabRow({cat:"Baths"}));
+
+      $("adjBody").innerHTML = "";
+
+      // Rebuild inspector list (clears all checkboxes/overrides)
+      buildInspectorList();
+
+      // Set the soft defaults
+      $("purchaseCostsPct").value = "1";
+      $("sellPct").value = "8";
+      $("profitTarget").value = "30000";
+      $("contPct").value = "15";
+      $("contPct3").value = "15";
+
+      syncRehabModeUI();
+      recalc();
+
+      // Re-enable auto-save after a tick
+      setTimeout(()=>{ _resetting = false; }, 100);
+
+      setStatus("Reset ✓");
+    }
+
+    let _resetting = false;
+
+    // ============================================================
+    // LIBRARY (multiple properties)
+    // ============================================================
+    function getLibrary(){
+      try { return JSON.parse(localStorage.getItem(LIBRARY_KEY) || "[]"); }
+      catch(e){ return []; }
+    }
+    function setLibrary(lib){
+      localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+    }
+    function openModal(id){ $(id).classList.add("open"); }
+    function closeModal(id){ $(id).classList.remove("open"); }
+
+    function renderLibrary(){
+      const lib = getLibrary();
+      const list = $("libList");
+      if (!lib.length){
+        list.innerHTML = `<div class="note">Your Library is empty.<br><br>To add a property: close this dialog, fill in the calculator, then click <b>Save</b> in the top bar. You'll be prompted to give it a name.</div>`;
+        return;
+      }
+      list.innerHTML = lib.map((entry, idx)=>{
+        const p = entry.property || {};
+        const displayName = entry._libName || p.address || "(no name)";
+        const subline = [
+          p.beds && (p.beds + "bd"),
+          p.baths && (p.baths + "ba"),
+          p.sqft && (p.sqft + " sqft"),
+          p.address && p.address !== displayName ? p.address : null
+        ].filter(Boolean).join(" · ");
+        return `
+          <div class="libRow">
+            <div style="flex:1;min-width:0">
+              <div class="addr">${displayName}</div>
+              <div class="meta">${subline || "—"}</div>
+              <div class="meta">saved ${new Date(entry.savedAt||Date.now()).toLocaleString()}</div>
+            </div>
+            <div class="actions">
+              <button class="miniBtn good" onclick="loadFromLibrary(${idx})" title="Load into calculator">Load &amp; Edit</button>
+              <button class="miniBtn danger" onclick="deleteFromLibrary(${idx})" title="Delete from Library">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function saveToLibrary(){
+      const data = snapshotData();
+      const lib = getLibrary();
+      // If address matches existing, ask to overwrite
+      const addr = (data.property.address || "").trim().toLowerCase();
+      const existingIdx = lib.findIndex(e => (e.property?.address||"").trim().toLowerCase() === addr && addr);
+      if (existingIdx >= 0){
+        if (!confirm(`Overwrite existing entry for "${data.property.address}"?`)) return;
+        lib[existingIdx] = data;
+      } else {
+        lib.push(data);
+      }
+      setLibrary(lib);
+      renderLibrary();
+      setStatus("Saved to library ✓");
+    }
+
+    function loadFromLibrary(idx){
+      const lib = getLibrary();
+      const entry = lib[idx];
+      if (!entry) return;
+      applySnapshot(entry);
+      closeModal("libModal");
+      setStatus("Loaded ✓");
+    }
+
+    function deleteFromLibrary(idx){
+      if (!confirm("Delete this saved property?")) return;
+      const lib = getLibrary();
+      lib.splice(idx, 1);
+      setLibrary(lib);
+      renderLibrary();
+    }
+
+    function exportAllLibrary(){
+      const lib = getLibrary();
+      const blob = new Blob([JSON.stringify(lib, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `arv_library_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importLibrary(file){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!Array.isArray(data)) throw new Error("not an array");
+          if (!confirm(`Import ${data.length} properties? This will merge with your existing library.`)) return;
+          const lib = getLibrary();
+          setLibrary([...lib, ...data]);
+          renderLibrary();
+          setStatus("Imported ✓");
+        } catch(err){
+          alert("Could not parse JSON file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ============================================================
+    // STRESS TEST
+    // ============================================================
+    function runStressTest(){
+      const compEval = evaluateComps();
+      const { arv: baseArv } = getArvFromComps(compEval.usable);
+      const baseRehab = getRehabTotal();
+      const offer = num("offerPrice",0);
+      const buyPct = clamp(num("purchaseCostsPct",1),0,10)/100;
+      const purchaseCosts = Math.max(0, offer*buyPct);
+      const baseHolding = getHoldingTotal();
+      const netAdj = getNetAdjustments();
+      const profitTarget = num("profitTarget",30000);
+
+      if (baseArv === 0 || offer === 0){
+        $("stressBody").innerHTML = `<tr><td colspan="7">Need ARV + offer to run stress test.</td></tr>`;
+        $("stressNote").style.display = "none";
+        openModal("stressModal");
+        return;
+      }
+
+      const arvDeltas = [-0.20, -0.10, 0];
+      const rehabDeltas = [-0.20, -0.10, 0, 0.10, 0.20, 0.30];
+
+      // Rows = ARV scenarios; cols = rehab scenarios
+      const arvScenarios = [-0.10, -0.05, 0, 0.05, 0.10];
+      let html = "";
+      arvScenarios.forEach(arvD=>{
+        const scenArv = baseArv * (1 + arvD);
+        const scenSelling = getSellingTotal(scenArv);
+        const arvLabel = (arvD === 0) ? "Base ARV" : (arvD > 0 ? `+${(arvD*100).toFixed(0)}%` : `${(arvD*100).toFixed(0)}%`);
+
+        const cells = rehabDeltas.map(rD=>{
+          const scenRehab = baseRehab * (1 + rD);
+          const allIn = offer + scenRehab + baseHolding + scenSelling + netAdj + purchaseCosts;
+          const profit = scenArv - allIn;
+          const cls = profit >= profitTarget ? "pos" : (profit < 0 ? "neg" : "");
+          return `<td class="${cls}">${money0(profit)}</td>`;
+        }).join("");
+
+        html += `<tr><td><b>${arvLabel}</b> (${money0(scenArv)})</td>${cells}</tr>`;
+      });
+
+      $("stressBody").innerHTML = html;
+
+      // Breaking point analysis
+      let breakArvDrop = null;
+      for (let d = -0.01; d > -0.50; d -= 0.01){
+        const scenArv = baseArv * (1 + d);
+        const scenSelling = getSellingTotal(scenArv);
+        const allIn = offer + baseRehab + baseHolding + scenSelling + netAdj + purchaseCosts;
+        const profit = scenArv - allIn;
+        if (profit < 0){ breakArvDrop = d; break; }
+      }
+
+      let breakRehabOver = null;
+      for (let d = 0.01; d < 1.0; d += 0.01){
+        const scenRehab = baseRehab * (1 + d);
+        const allIn = offer + scenRehab + baseHolding + getSellingTotal(baseArv) + netAdj + purchaseCosts;
+        const profit = baseArv - allIn;
+        if (profit < 0){ breakRehabOver = d; break; }
+      }
+
+      const notes = [];
+      if (breakArvDrop !== null) notes.push(`ARV drop tolerance: ${(breakArvDrop*100).toFixed(1)}% before profit goes negative.`);
+      else notes.push(`ARV drop tolerance: deal stays positive even at -50% ARV (recheck inputs — likely too conservative cost model).`);
+
+      if (breakRehabOver !== null) notes.push(`Rehab overrun tolerance: +${(breakRehabOver*100).toFixed(1)}% before profit goes negative.`);
+      else notes.push(`Rehab overrun tolerance: deal stays positive even at +100% overrun.`);
+
+      $("stressNote").innerHTML = notes.join("<br>");
+      $("stressNote").style.display = "";
+      openModal("stressModal");
+    }
+
+    // ============================================================
+    // REHAB MODE UI
+    // ============================================================
+    function syncRehabModeUI(){
+      const mode = $("rehabMode").value;
+      $("rehabQuick").style.display    = (mode==="quick")     ? "" : "none";
+      $("rehabDetailed").style.display = (mode==="detailed")  ? "" : "none";
+      $("rehabInspector").style.display= (mode==="inspector") ? "" : "none";
+
+      // If switching to inspector mode and list is empty, build it
+      if (mode === "inspector" && $("inspBody").children.length === 0){
+        buildInspectorList();
+      }
+    }
+
+    // ============================================================
+    // PDF EXPORT (fixed color reset bug)
+    // ============================================================
+    async function generatePdf(){
+      recalc();
+      const data = snapshotData();
+
+      if (!window.jspdf || !window.jspdf.jsPDF){
+        alert("PDF library didn't load. Allow cdn.jsdelivr.net or host jsPDF locally.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:"pt", format:"letter" });
+
+      const pageW = doc.internal.pageSize.width;
+      const pageH = doc.internal.pageSize.height;
+      const left = 48;
+      const right = pageW - 48;
+      const bottom = pageH - 54;
+      let y = 60;
+
+      const ensureBlack = () => {
+        doc.setTextColor(0,0,0);
+      };
+
+      const newPageIfNeeded = (nextY) => {
+        if (nextY > bottom){
+          doc.addPage();
+          ensureBlack();
+          return 60;
+        }
+        return nextY;
+      };
+
+      const h1 = (t)=>{
+        ensureBlack();
+        doc.setFont("helvetica","bold"); doc.setFontSize(14);
+        y = newPageIfNeeded(y+18);
+        doc.text(t, left, y);
+        y += 14;
+        doc.setDrawColor(200,200,200);
+        doc.line(left, y, right, y);
+        y += 8;
+      };
+
+      const kv = (k, v)=>{
+        ensureBlack();
+        doc.setFont("helvetica","normal"); doc.setFontSize(10.5);
+        y = newPageIfNeeded(y+15);
+        doc.text(String(k), left, y);
+        const vv = String(v ?? "—");
+        const w = doc.getTextWidth(vv);
+        if (w > (right-left)*0.55){
+          const wrapped = doc.splitTextToSize(vv, right-left-100);
+          doc.text(wrapped, right - doc.getTextWidth(wrapped[0]), y);
+          y += (wrapped.length-1)*12;
+        } else {
+          doc.text(vv, right - w, y);
+        }
+      };
+
+      const para = (t)=>{
+        ensureBlack();
+        doc.setFont("helvetica","normal"); doc.setFontSize(10);
+        const wrapped = doc.splitTextToSize(String(t || "—"), right-left);
+        y = newPageIfNeeded(y+14);
+        doc.text(wrapped, left, y);
+        y += (wrapped.length-1)*12 + 6;
+      };
+
+      // Header band
+      doc.setFillColor(11,19,34);
+      doc.rect(0,0,pageW,80,"F");
+      doc.setTextColor(255,255,255);
+      doc.setFont("helvetica","bold"); doc.setFontSize(17);
+      doc.text("Flip Deal Analysis", left, 38);
+      doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      doc.setTextColor(180,200,225);
+      doc.text(safeStr(data.property.address) || "Property Analysis", left, 56);
+      doc.text(`Generated ${new Date().toLocaleString()}`, left, 70);
+      ensureBlack();
+      y = 110;
+
+      // Pull values
+      const compEval = evaluateComps();
+      const { arv } = getArvFromComps(compEval.usable);
+      const offer = num("offerPrice",0);
+      const buyPct = clamp(num("purchaseCostsPct",1),0,10)/100;
+      const purchaseCosts = Math.max(0, offer*buyPct);
+      const rehab = getRehabTotal();
+      const holding = getHoldingTotal();
+      const selling = getSellingTotal(arv);
+      const netAdj = getNetAdjustments();
+      const profitTarget = num("profitTarget",30000);
+      const mao = computeMAO(arv, rehab, holding, selling, profitTarget, netAdj, purchaseCosts);
+      const allIn = offer + rehab + holding + selling + netAdj + purchaseCosts;
+      const profit = arv - allIn;
+
+      // Verdict block (large)
+      const final = $("finalOut").textContent || "—";
+      const isPass = final==="PASS";
+      const isFail = final==="FAIL";
+      if (isPass) doc.setFillColor(52,211,153);
+      else if (isFail) doc.setFillColor(251,113,133);
+      else doc.setFillColor(251,191,36);
+      doc.roundedRect(left, y, right-left, 40, 8, 8, "F");
+      doc.setTextColor(255,255,255);
+      doc.setFont("helvetica","bold"); doc.setFontSize(14);
+      doc.text(`VERDICT: ${final}`, left+14, y+18);
+      doc.setFontSize(9.5);
+      doc.setFont("helvetica","normal");
+      doc.text($("verdictMeta").textContent || "", left+14, y+32);
+      ensureBlack();
+      y += 56;
+
+      // Property
+      h1("Property Details");
+      kv("Address:", safeStr(data.property.address) || "—");
+      kv("Type:", data.property.ptype);
+      kv("Beds / Baths:", `${data.property.beds || "—"} / ${data.property.baths || "—"}`);
+      kv("Square Footage:", data.property.sqft || "—");
+      kv("Year Built:", data.property.yearBuilt || "—");
+      kv("Lot Size:", data.property.lotSize || "—");
+      kv("Garage:", data.property.garage || "—");
+      kv("Condition:", data.property.condition || "—");
+      if (safeStr(data.property.notes)){
+        y += 6;
+        para(safeStr(data.property.notes));
+      }
+      y += 6;
+
+      // Investment summary
+      h1("Investment Summary");
+      kv("ARV:", money0(arv));
+      kv("Offer Price:", money0(offer));
+      kv("MAO:", money0(mao));
+      kv("Rehab:", money0(rehab));
+      kv("Holding (incl loan):", money0(holding));
+      kv("Selling:", money0(selling));
+      kv("Purchase Costs:", money0(purchaseCosts));
+      kv("Net Adjustments:", money0(netAdj));
+      kv("Profit Target:", money0(profitTarget));
+      kv("All-in Cost:", money0(allIn));
+      kv("Projected Profit:", money0(profit));
+      const sqft = num("sqft",0);
+      if (sqft > 0){
+        kv("ARV $/sqft:", money2(arv/sqft));
+        kv("Rehab $/sqft:", money2(rehab/sqft));
+      }
+      const months = num("holdMonths",0);
+      const loan = num("loanAmt",0);
+      const cashInvested = Math.max(0, allIn - loan);
+      const roi = cashInvested>0 ? (profit/cashInvested)*100 : 0;
+      kv("Cash-on-Cash ROI:", pct2(roi));
+      if (months > 0) kv("Annualized ROI:", pct2(roi * 12 / months));
+
+      y += 6;
+
+      // Comps
+      h1("Comps Used");
+      const selected = (data.comps || []).filter(c=>c.use && c.price);
+      if (!selected.length){
+        para("No comps selected.");
+      } else {
+        ensureBlack();
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+        y = newPageIfNeeded(y+14);
+        doc.text("Sold", left, y);
+        doc.text("Adj $", left+90, y);
+        doc.text("Adj Price", left+150, y);
+        doc.text("SqFt", left+220, y);
+        doc.text("Dist", left+260, y);
+        doc.text("Date", left+295, y);
+        doc.text("Notes", left+340, y);
+        y += 12;
+        doc.setFont("helvetica","normal"); doc.setFontSize(9);
+        selected.forEach(c=>{
+          const sold = Number((c.price||"").replace(/,/g,""))||0;
+          const adj = Number((c.adj||"").replace(/,/g,""))||0;
+          const adjPrice = sold + adj;
+          y = newPageIfNeeded(y+13);
+          doc.text(money0(sold), left, y);
+          doc.text(money0(adj), left+90, y);
+          doc.text(money0(adjPrice), left+150, y);
+          doc.text(String(c.sqft||"—"), left+220, y);
+          doc.text(String(c.dist||"—"), left+260, y);
+          doc.text(String(c.date||"—"), left+295, y);
+          const noteW = right - (left+340);
+          const noteWrap = doc.splitTextToSize(String(c.notes||""), noteW);
+          doc.text(noteWrap[0] || "", left+340, y);
+          if (noteWrap.length > 1){
+            y += 11;
+            for (let i=1; i<noteWrap.length && i<3; i++){
+              doc.text(noteWrap[i], left+340, y);
+              y += 11;
+            }
+          }
+        });
+      }
+      y += 6;
+
+      // Rehab detail
+      h1("Rehab Detail");
+      kv("Mode:", ({quick:"Quick Estimate", detailed:"Detailed Line Items", inspector:"Inspector Checklist"})[data.rehab.mode] || data.rehab.mode);
+      kv("Rehab Total:", money0(rehab));
+
+      if (data.rehab.mode === "detailed" && (data.rehab.detailed?.items||[]).length){
+        y += 6;
+        ensureBlack();
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+        y = newPageIfNeeded(y+14);
+        doc.text("Category", left, y);
+        doc.text("Cost", left+120, y);
+        doc.text("Scope", left+200, y);
+        y += 12;
+        doc.setFont("helvetica","normal"); doc.setFontSize(9);
+        (data.rehab.detailed.items||[]).forEach(it=>{
+          y = newPageIfNeeded(y+13);
+          doc.text(String(it.cat||"—"), left, y);
+          doc.text(money0(Number((it.cost||"").replace(/,/g,""))||0), left+120, y);
+          const wn = doc.splitTextToSize(String(it.notes||""), right-(left+200));
+          doc.text(wn[0]||"", left+200, y);
+        });
+      } else if (data.rehab.mode === "inspector"){
+        const items = (data.rehab.inspector?.items||[]).filter(i=>i.use);
+        if (items.length){
+          y += 6;
+          ensureBlack();
+          doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+          y = newPageIfNeeded(y+14);
+          doc.text("Item", left, y);
+          doc.text("Cost", left+360, y);
+          y += 12;
+          doc.setFont("helvetica","normal"); doc.setFontSize(9);
+          items.forEach(it=>{
+            const def = INSPECTOR_ITEMS.find(x=>x.id===it.id);
+            if (!def) return;
+            const override = Number((it.override||"").replace(/,/g,""));
+            const cost = (Number.isFinite(override) && override>0) ? override : def.cost;
+            y = newPageIfNeeded(y+13);
+            doc.text(def.label, left, y);
+            doc.text(money0(cost), left+360, y);
+          });
+        }
+      } else {
+        kv("Quick $/SqFt:", money0(num("rehabPerSqft",0)));
+        kv("Allowance:", money0(num("rehabAllowance",0)));
+        kv("Misc:", money0(num("rehabMisc",0)));
+      }
+
+      y += 6;
+
+      // Adjustments
+      if ((data.adjustments||[]).length){
+        h1("Adjustments & Credits");
+        ensureBlack();
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+        y = newPageIfNeeded(y+14);
+        doc.text("Type", left, y);
+        doc.text("Amount", left+80, y);
+        doc.text("Description", left+180, y);
+        y += 12;
+        doc.setFont("helvetica","normal"); doc.setFontSize(9);
+        (data.adjustments||[]).forEach(a=>{
+          y = newPageIfNeeded(y+13);
+          doc.text(a.type||"—", left, y);
+          doc.text(money0(Number((a.amt||"").replace(/,/g,""))||0), left+80, y);
+          const desc = doc.splitTextToSize(String(a.desc||""), right-(left+180));
+          doc.text(desc[0]||"", left+180, y);
+        });
+      }
+
+      // Notes
+      if (safeStr(data.property.notes)){
+        y += 6;
+        h1("Notes");
+        para(safeStr(data.property.notes));
+      }
+
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i=1; i<=pageCount; i++){
+        doc.setPage(i);
+        doc.setTextColor(140,140,140);
+        doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        doc.text(`Page ${i} of ${pageCount} • DHP Estate ARV/MAO Calculator`, left, pageH-30);
+      }
+
+      const safeName = (safeStr(data.property.address) || "Property")
+        .replace(/[^a-z0-9\-\s_]/gi,"")
+        .trim().replace(/\s+/g,"_")
+        .slice(0,40) || "Property";
+      doc.save(`ARV_Report_${safeName}.pdf`);
+    }
+
+    // ============================================================
+    // AUTO-ADJUST COMPS (suggest adjustments based on sqft variance)
+    // ============================================================
+    function autoAdjustComps(){
+      const subjectSqft = num("sqft",0);
+      if (!subjectSqft){
+        alert("Enter subject square footage first.");
+        return;
+      }
+      const rows = Array.from($("compBody").querySelectorAll("tr"));
+      let adjusted = 0;
+      rows.forEach(r=>{
+        const sold = Number((r.querySelector(".c_price").value||"").replace(/,/g,"")) || 0;
+        const sqft = Number((r.querySelector(".c_sqft").value||"").replace(/,/g,"")) || 0;
+        if (!sold || !sqft) return;
+        // Adjust at ~50% of $/sqft delta (industry rule of thumb — full $/sqft over-adjusts)
+        const compPsf = sold / sqft;
+        const sqftDelta = subjectSqft - sqft;
+        const suggestedAdj = Math.round(sqftDelta * compPsf * 0.5);
+        r.querySelector(".c_adj").value = suggestedAdj;
+        adjusted++;
+      });
+      recalc();
+      setStatus(`Auto-adjusted ${adjusted} comps`);
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    function initDefaults(force=false){
+      const setIfEmpty = (id,val)=>{
+        const el = $(id);
+        if (!el) return;
+        if (force || !safeStr(el.value)) el.value = val;
+      };
+
+      setIfEmpty("purchaseCostsPct","1");
+      setIfEmpty("sellPct","8");
+      setIfEmpty("profitTarget","30000");
+      setIfEmpty("contPct","15");
+      setIfEmpty("contPct3","15");
+
+      if (force || $("compBody").children.length===0){
+        $("compBody").innerHTML = "";
+        $("compBody").appendChild(compRow({use:true}));
+        $("compBody").appendChild(compRow({use:true}));
+        $("compBody").appendChild(compRow({use:true}));
+      }
+      if (force || $("rehabBody").children.length===0){
+        $("rehabBody").innerHTML = "";
+        $("rehabBody").appendChild(rehabRow({cat:"Kitchen"}));
+        $("rehabBody").appendChild(rehabRow({cat:"Baths"}));
+      }
+      if (force || $("adjBody").children.length===0){
+        $("adjBody").innerHTML = "";
+      }
+
+      // Build inspector list lazily on first switch
+      buildInspectorList();
+
+      syncRehabModeUI();
+      recalc();
+    }
+
+    // ============================================================
+    // EVENTS
+    // ============================================================
+    document.addEventListener("input", (e)=>{
+      const t = e.target;
+      if (!t) return;
+      if (t.matches("#wrap input, #wrap select, #wrap textarea")) return; // no-op
+      // Recalc handled by row-level listeners; this catches the top-level fields
+    });
+
+    // Top-level recalc bindings
+    ["address","ptype","sqft","beds","baths","yearBuilt","lotSize","garage","condition","notes",
+     "rehabPerSqft","rehabAllowance","rehabMisc","contPct","rehabMisc2","rehabAllowance2",
+     "contPct3","rehabMisc3","rehabAllowance3",
+     "offerPrice","purchaseCostsPct","profitTarget","maoRule","holdMonths",
+     "holdTax","holdIns","holdUtil","holdHoa","holdExtra",
+     "sellPct","sellFlat","loanAmt","loanRate","loanPoints",
+     "rentEst","rentExpense"].forEach(id=>{
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("input", ()=>{ recalc(); setStatus("Calculating…"); });
+      el.addEventListener("change", ()=>{ recalc(); setStatus("Calculating…"); });
+    });
+
+    $("rehabMode").addEventListener("change", ()=>{
+      syncRehabModeUI();
+      recalc();
+      setStatus("Mode changed");
+    });
+
+    // ARV method pills
+    document.querySelectorAll(".pill[data-method]").forEach(pill=>{
+      pill.addEventListener("click", ()=>{
+        document.querySelectorAll(".pill[data-method]").forEach(p=>p.classList.remove("active"));
+        pill.classList.add("active");
+        arvMethod = pill.dataset.method;
+        recalc();
+        setStatus("Method: " + arvMethod);
+      });
+    });
+
+    $("addComp").addEventListener("click", ()=>{ $("compBody").appendChild(compRow({use:true})); recalc(); setStatus("Comp added"); });
+    $("add3Comp").addEventListener("click", ()=>{
+      $("compBody").appendChild(compRow({use:true}));
+      $("compBody").appendChild(compRow({use:false}));
+      $("compBody").appendChild(compRow({use:false}));
+      recalc(); setStatus("3 comps added");
+    });
+    $("autoAdj").addEventListener("click", autoAdjustComps);
+
+    $("addRehab").addEventListener("click", ()=>{ $("rehabBody").appendChild(rehabRow({})); recalc(); setStatus("Item added"); });
+    $("addAdj").addEventListener("click", ()=>{ $("adjBody").appendChild(adjRow({type:"ADD"})); recalc(); setStatus("Adj added"); });
+
+    $("btnQuickSave").addEventListener("click", ()=>{ saveLocal(); });
+    $("btnReset").addEventListener("click", resetAll);
+    $("btnPdf").addEventListener("click", generatePdf);
+    $("btnStress").addEventListener("click", runStressTest);
+
+    // Theme toggle
+    const THEME_KEY = "arv_calc_pro_v4_theme";
+    function applyTheme(t){
+      document.documentElement.setAttribute("data-theme", t);
+      try { localStorage.setItem(THEME_KEY, t); } catch(e){}
+      const btn = $("btnTheme");
+      if (btn) btn.textContent = t === "dark" ? "☀" : "◐";
+    }
+    $("btnTheme").addEventListener("click", ()=>{
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+    // Load saved theme on boot
+    try {
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if (savedTheme) applyTheme(savedTheme);
+      else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) applyTheme("dark");
+    } catch(e){}
+
+    // Library
+    $("btnLibrary").addEventListener("click", ()=>{ renderLibrary(); openModal("libModal"); });
+    $("libSaveNew").addEventListener("click", ()=>{ saveLocal(); renderLibrary(); });
+    $("libExportAll").addEventListener("click", exportAllLibrary);
+    $("libImport").addEventListener("click", ()=> $("libImportFile").click());
+    $("libImportFile").addEventListener("change", (e)=>{
+      const f = e.target.files[0];
+      if (f) importLibrary(f);
+      e.target.value = "";
+    });
+
+    // Modal backdrop close
+    document.querySelectorAll(".modalBack").forEach(m=>{
+      m.addEventListener("click", (e)=>{
+        if (e.target === m) m.classList.remove("open");
+      });
+    });
+
+    // Auto-save on input (debounced)
+    let autoSaveT = null;
+    function scheduleAutoSave(){
+      if (_resetting) return; // don't auto-save during reset
+      clearTimeout(autoSaveT);
+      autoSaveT = setTimeout(()=>{
+        if (_resetting) return;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshotData())); } catch(e){}
+      }, 1000);
+    }
+    document.addEventListener("input", scheduleAutoSave);
+    document.addEventListener("change", scheduleAutoSave);
+
+    // Boot
+    (function boot(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw){
+        try{ applySnapshot(JSON.parse(raw)); return; }catch(e){}
+      }
+      initDefaults(false);
+    })();
+
+    // Expose for inline handlers
+    window.loadFromLibrary = loadFromLibrary;
+    window.deleteFromLibrary = deleteFromLibrary;
+    window.closeModal = closeModal;
+  </script>
+</body>
+</html>
