@@ -556,6 +556,10 @@
       z-index: 2;
       border-bottom: 1px solid var(--ink-200);
     }
+    th[title] {
+      cursor: help;
+      border-bottom: 1px dashed var(--ink-300);
+    }
     tr:last-child td { border-bottom: none; }
     tr.compFlag td { background: var(--signal-warn-bg); }
     tr.compStale td { background: var(--signal-neg-bg); }
@@ -830,6 +834,111 @@
       .card .hd { padding: var(--s3); }
       .card .bd { padding: var(--s3); }
     }
+    /* ============================================================
+       TOOLTIPS — info icons next to labels
+       ============================================================ */
+    .tip {
+      position: relative;
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-left: 4px;
+      vertical-align: middle;
+      cursor: help;
+      color: var(--ink-400);
+      transition: color var(--t1);
+    }
+    .tip:hover, .tip.active {
+      color: var(--brand-700);
+    }
+    .tip svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .tip .tipBody {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 220px;
+      max-width: 280px;
+      padding: 8px 10px;
+      background: var(--ink-900);
+      color: var(--ink-50);
+      font-family: var(--font-ui);
+      font-size: 11.5px;
+      font-weight: 400;
+      line-height: 1.45;
+      letter-spacing: 0;
+      text-transform: none;
+      border-radius: var(--r2);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+      z-index: 100;
+      pointer-events: none;
+      white-space: normal;
+      text-align: left;
+    }
+    [data-theme="dark"] .tip .tipBody {
+      background: var(--ink-200);
+      color: var(--ink-900);
+    }
+    .tip .tipBody::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--ink-900);
+    }
+    [data-theme="dark"] .tip .tipBody::after {
+      border-top-color: var(--ink-200);
+    }
+    .tip:hover .tipBody,
+    .tip.active .tipBody {
+      opacity: 1;
+      visibility: visible;
+    }
+    .tip .tipEg {
+      display: block;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      color: var(--gold-300);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+    }
+    [data-theme="dark"] .tip .tipEg {
+      border-top-color: rgba(0,0,0,0.15);
+      color: var(--gold-700);
+    }
+    /* On narrow screens, anchor tooltips to the right edge to prevent off-screen */
+    @media (max-width: 720px) {
+      .tip .tipBody {
+        left: auto;
+        right: -8px;
+        transform: none;
+        min-width: 200px;
+        max-width: min(260px, calc(100vw - 40px));
+      }
+      .tip .tipBody::after {
+        left: auto;
+        right: 12px;
+        transform: none;
+      }
+    }
+    /* KPI title tooltips position differently — anchored to the title */
+    .kpi .t .tip {
+      color: var(--ink-300);
+    }
+    .kpi .t .tip:hover {
+      color: var(--brand-700);
+    }
+
   </style>
 </head>
 </head>
@@ -846,11 +955,11 @@
       </div>
       <div class="actions">
         <button class="btn secondary themeBtn" id="btnTheme" type="button" title="Toggle theme" aria-label="Toggle dark mode">◐</button>
-        <button class="btn secondary" id="btnReset" type="button" title="Reset all fields">Reset</button>
-        <button class="btn secondary" id="btnQuickSave" type="button" title="Quick-save">Save</button>
-        <button class="btn secondary" id="btnLibrary" type="button" title="Property library">Library</button>
-        <button class="btn warn" id="btnStress" type="button" title="Stress test scenarios">Stress Test</button>
-        <button class="btn primary" id="btnPdf" type="button">Export PDF</button>
+        <button class="btn secondary" id="btnReset" type="button" title="Clear all fields and start fresh. Library is not affected.">Reset</button>
+        <button class="btn secondary" id="btnQuickSave" type="button" title="Save the current property to your Library with a name. You can reload and edit it later from the Library.">Save</button>
+        <button class="btn secondary" id="btnLibrary" type="button" title="Open your library of saved properties. Click 'Load & Edit' on any to bring it back into the calculator.">Library</button>
+        <button class="btn warn" id="btnStress" type="button" title="Run sensitivity tests: what happens to profit if ARV drops or rehab overruns? Shows breaking points before you offer.">Stress Test</button>
+        <button class="btn primary" id="btnPdf" type="button" title="Generate a professional PDF report with all inputs, comps, and verdict. Downloads to your device.">Export PDF</button>
       </div>
     </div>
 
@@ -875,11 +984,11 @@
 
             <div class="formgrid">
               <div class="fg w8">
-                <label for="address">Address</label>
+                <label for="address">Address<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Full street address of the property you're evaluating. Used for the PDF report header and Library naming.<span class="tipEg">Ex: 123 Main St, Algonquin, IL 60102</span></span></span></label>
                 <input id="address" placeholder="Property address, City, State ZIP" />
               </div>
               <div class="fg w4">
-                <label for="ptype">Property Type</label>
+                <label for="ptype">Property Type<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Type of property. Affects which comp set is appropriate — don't mix townhomes with detached.<span class="tipEg">Ex: Single Family</span></span></span></label>
                 <select id="ptype">
                   <option value="Single Family">Single Family</option>
                   <option value="Townhome">Townhome</option>
@@ -890,32 +999,32 @@
               </div>
 
               <div class="fg">
-                <label for="sqft">Square Footage</label>
+                <label for="sqft">Square Footage<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Above-grade (above-ground) finished square feet ONLY. Do not include basement, even if finished. Comps are quoted above-grade.<span class="tipEg">Ex: 1950</span></span></span></label>
                 <input id="sqft" inputmode="decimal" placeholder="e.g. 3192" />
               </div>
               <div class="fg">
-                <label for="beds">Beds</label>
+                <label for="beds">Beds<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total bedrooms above grade. Basement bedrooms with egress count if MLS counts them.<span class="tipEg">Ex: 4</span></span></span></label>
                 <input id="beds" inputmode="decimal" placeholder="e.g. 4" />
               </div>
               <div class="fg">
-                <label for="baths">Baths</label>
+                <label for="baths">Baths<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total baths. Use decimal: 2.5 means 2 full + 1 half. A full bath = sink + toilet + tub/shower. A half = sink + toilet.<span class="tipEg">Ex: 2.5</span></span></span></label>
                 <input id="baths" inputmode="decimal" placeholder="e.g. 2.5" />
               </div>
               <div class="fg">
-                <label for="yearBuilt">Year Built</label>
+                <label for="yearBuilt">Year Built<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">4-digit year the home was originally built. Affects rehab scope expectations and buyer perception.<span class="tipEg">Ex: 1994</span></span></span></label>
                 <input id="yearBuilt" inputmode="numeric" placeholder="e.g. 1994" />
               </div>
 
               <div class="fg w4">
-                <label for="lotSize">Lot Size (sqft)</label>
+                <label for="lotSize">Lot Size (sqft)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Lot area in square feet. Multiply acres × 43,560 to convert. Larger lots can carry a premium in some markets.<span class="tipEg">Ex: 12000 (= 0.28 acres)</span></span></span></label>
                 <input id="lotSize" inputmode="decimal" placeholder="e.g. 12000" />
               </div>
               <div class="fg w4">
-                <label for="garage">Garage Spaces</label>
+                <label for="garage">Garage Spaces<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Number of cars the garage holds. Each space change is typically a $5-10k value difference.<span class="tipEg">Ex: 2</span></span></span></label>
                 <input id="garage" inputmode="numeric" placeholder="e.g. 2" />
               </div>
               <div class="fg w4">
-                <label for="condition">Current Condition</label>
+                <label for="condition">Current Condition<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">How the property looks TODAY, before your rehab. Be honest — overstating condition leads to under-budgeted rehab.<span class="tipEg">Distressed / Dated / Average / Updated / Renovated</span></span></span></label>
                 <select id="condition">
                   <option value="distressed">Distressed / As-is</option>
                   <option value="dated">Dated but functional</option>
@@ -926,7 +1035,7 @@
               </div>
 
               <div class="fg w12">
-                <label for="notes">Notes</label>
+                <label for="notes">Notes<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Free-text notes about the deal, seller motivation, scope, strategy, or anything worth remembering when you reload the property later.<span class="tipEg">Ex: Estate sale, executor wants out by Mar 1, kitchen original</span></span></span></label>
                 <textarea id="notes" placeholder="Deal notes, condition observations, seller motivation, strategy..."></textarea>
               </div>
             </div>
@@ -941,33 +1050,33 @@
               <div class="rowBtns">
                 <button class="miniBtn accent" id="addComp" type="button">+ Add Comp</button>
                 <button class="miniBtn" id="add3Comp" type="button">+ Add 3</button>
-                <button class="miniBtn warn" id="autoAdj" type="button" title="Auto-suggest adjustments based on sqft variance">Auto-Adjust</button>
+                <button class="miniBtn warn" id="autoAdj" type="button" title="Auto-fill the Adj $ column for all comps based on sqft difference. Uses the industry half-rule: 50% of local $/sqft per sqft of variance. A good starting point — refine manually after.">Auto-Adjust</button>
               </div>
             </div>
 
             <div class="pillRow">
               <span class="small" style="margin-right:6px">ARV method:</span>
-              <span class="pill active" data-method="avg">Avg Adj Price</span>
-              <span class="pill" data-method="median">Median Adj Price</span>
-              <span class="pill" data-method="psfmedian">Median $/sqft × Subject</span>
-              <span class="pill" data-method="weighted">Distance-Weighted</span>
+              <span class="pill active" data-method="avg" title="Simple average of all selected comps' adjusted prices. Default. Good when comps are similar in size and price.">Avg Adj Price</span>
+              <span class="pill" data-method="median" title="Median (middle value) of comps' adjusted prices. Better than average when one comp is an outlier — outliers don't sway the median.">Median Adj Price</span>
+              <span class="pill" data-method="psfmedian" title="Calculates median price-per-sqft from comps, then multiplies by your subject's sqft. Best method when comps vary significantly in size from subject.">Median $/sqft × Subject</span>
+              <span class="pill" data-method="weighted" title="Distance-weighted average: closer comps count more. Uses 1/(distance+0.1) weighting. Best when distances vary widely.">Distance-Weighted</span>
             </div>
 
             <div class="tblWrap" style="margin-top:10px">
               <table>
                 <thead>
                   <tr>
-                    <th>Use</th>
-                    <th>Sold Price</th>
-                    <th>Adj $</th>
-                    <th>Adj Price</th>
-                    <th>SqFt</th>
-                    <th>$/SqFt</th>
-                    <th>Adj $/SqFt</th>
-                    <th>Dist (mi)</th>
-                    <th>Sold Date</th>
-                    <th>Quality</th>
-                    <th class="wide">Notes</th>
+                    <th title="Check to include this comp in the ARV calculation. Uncheck to exclude without deleting.">Use</th>
+                    <th title="The actual closed/sold price of the comp. Get this from MLS Sold status, not List status.">Sold Price</th>
+                    <th title="Dollar adjustment: positive (+) if subject is better than comp; negative (-) if comp is better. Click Auto-Adjust for sqft-based starter values.">Adj $</th>
+                    <th title="Calculated: Sold Price + Adj $. This is what the comp would have sold for if it had been identical to your subject.">Adj Price</th>
+                    <th title="Comp's above-grade square footage. Match the way you measured subject (above-grade only).">SqFt</th>
+                    <th title="Calculated: Sold Price ÷ SqFt. Shows the comp's raw price-per-sqft. Useful for quick sanity check across comps.">$/SqFt</th>
+                    <th title="Calculated: Adj Price ÷ SqFt. Shows the adjusted price-per-sqft, accounting for your adjustments.">Adj $/SqFt</th>
+                    <th title="Distance from subject property in miles. Comps within 0.5 mi are ideal; flagged 'Far' if over 1.0.">Dist (mi)</th>
+                    <th title="When the comp sold. Accepts MM/YYYY or MM/DD/YYYY. Comps over 6 months old get flagged 'Old'; over 12 months get 'Stale'.">Sold Date</th>
+                    <th title="Auto-calculated comp quality based on distance, sqft variance, and date. Aim for 3+ 'Good' comps.">Quality</th>
+                    <th class="wide" title="Distinguishing features of the comp: kitchen updates, basement finish, garage size, lot features, condition. Helps you remember why you adjusted.">Notes</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -994,7 +1103,7 @@
 
             <div class="formgrid">
               <div class="fg w6">
-                <label for="rehabMode">Rehab Mode</label>
+                <label for="rehabMode">Rehab Mode<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">How you estimate rehab cost. Quick = fastest first-pass triage. Detailed = post-walkthrough with itemized scope. Inspector = pre-loaded checklist for 35 common findings.<span class="tipEg">Triage → Quick. Walked it → Detailed/Inspector</span></span></span></label>
                 <select id="rehabMode">
                   <option value="quick">Quick Estimate ($/SqFt + Allowance)</option>
                   <option value="detailed">Detailed Line Items</option>
@@ -1004,7 +1113,7 @@
               </div>
 
               <div class="fg w6">
-                <label>Rehab Level (auto)</label>
+                <label>Rehab Level (auto)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Auto-categorizes your rehab by cost-per-sqft. Cosmetic ≤ $35/sqft, Medium ≤ $65/sqft, Heavy > $65/sqft. A sanity check that your budget matches the scope.<span class="tipEg">Ex: Medium rehab on 2000 sqft = $40-130k total</span></span></span></label>
                 <div class="badge warn" id="rehabBadge"><span class="dot"></span><span id="rehabLevel">—</span></div>
                 <div class="hint">Cosmetic ≤ $35/sqft • Medium ≤ $65/sqft • Heavy > $65/sqft</div>
               </div>
@@ -1014,15 +1123,15 @@
             <div id="rehabQuick">
               <div class="formgrid" style="margin-top:10px">
                 <div class="fg w4">
-                  <label for="rehabPerSqft">Quick $/SqFt</label>
+                  <label for="rehabPerSqft">Quick $/SqFt<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Estimated rehab cost per square foot. Industry benchmarks: Cosmetic $20-35, Medium $35-55, Heavy $55-85, Gut rehab $85+.<span class="tipEg">Ex: 35 (cosmetic-to-medium flip)</span></span></span></label>
                   <input id="rehabPerSqft" inputmode="decimal" placeholder="e.g. 45" />
                 </div>
                 <div class="fg w4">
-                  <label for="rehabAllowance">Allowance (lump sum)</label>
+                  <label for="rehabAllowance">Allowance (lump sum)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Lump-sum items not captured by $/sqft. Use for big-ticket additions like a full roof, new HVAC, or appliance package.<span class="tipEg">Ex: 20000 (new roof + HVAC bundle)</span></span></span></label>
                   <input id="rehabAllowance" inputmode="decimal" placeholder="e.g. 5000" />
                 </div>
                 <div class="fg w4">
-                  <label for="rehabMisc">Design / Misc</label>
+                  <label for="rehabMisc">Design / Misc<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Soft costs and design splurges outside physical rehab. Permits, cleaning crew, staging consult, signage, lockboxes, statement fixtures.<span class="tipEg">Ex: 2000</span></span></span></label>
                   <input id="rehabMisc" inputmode="decimal" placeholder="e.g. 1500" />
                 </div>
               </div>
@@ -1053,15 +1162,15 @@
 
               <div class="formgrid" style="margin-top:10px">
                 <div class="fg w4">
-                  <label for="contPct">Contingency %</label>
+                  <label for="contPct">Contingency %<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Buffer for cost overruns and unknowns. Applied as a % of line-item subtotal. Don't go below 10% — every flip has surprises. 15% is the realistic default.<span class="tipEg">Ex: 15 (typical) or 20 (older home / unknown systems)</span></span></span></label>
                   <input id="contPct" inputmode="decimal" placeholder="15" />
                 </div>
                 <div class="fg w4">
-                  <label for="rehabMisc2">Design / Misc</label>
+                  <label for="rehabMisc2">Design / Misc<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Soft costs and design splurges outside physical rehab. Permits, cleaning crew, staging consult, signage, lockboxes, statement fixtures.<span class="tipEg">Ex: 2000</span></span></span></label>
                   <input id="rehabMisc2" inputmode="decimal" placeholder="e.g. 1500" />
                 </div>
                 <div class="fg w4">
-                  <label for="rehabAllowance2">Allowance (lump sum)</label>
+                  <label for="rehabAllowance2">Allowance (lump sum)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Lump-sum items not captured by $/sqft. Use for big-ticket additions like a full roof, new HVAC, or appliance package.<span class="tipEg">Ex: 20000 (new roof + HVAC bundle)</span></span></span></label>
                   <input id="rehabAllowance2" inputmode="decimal" placeholder="e.g. 5000" />
                 </div>
               </div>
@@ -1088,15 +1197,15 @@
               </div>
               <div class="formgrid" style="margin-top:10px">
                 <div class="fg w4">
-                  <label for="contPct3">Contingency %</label>
+                  <label for="contPct3">Contingency %<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Buffer for cost overruns and unknowns. Applied as a % of line-item subtotal. Don't go below 10% — every flip has surprises. 15% is the realistic default.<span class="tipEg">Ex: 15 (typical) or 20 (older home / unknown systems)</span></span></span></label>
                   <input id="contPct3" inputmode="decimal" placeholder="15" />
                 </div>
                 <div class="fg w4">
-                  <label for="rehabMisc3">Design / Misc</label>
+                  <label for="rehabMisc3">Design / Misc<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Soft costs and design splurges outside physical rehab. Permits, cleaning crew, staging consult, signage, lockboxes, statement fixtures.<span class="tipEg">Ex: 2000</span></span></span></label>
                   <input id="rehabMisc3" inputmode="decimal" placeholder="e.g. 1500" />
                 </div>
                 <div class="fg w4">
-                  <label for="rehabAllowance3">Other Allowance</label>
+                  <label for="rehabAllowance3">Other Allowance<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Same as Allowance — lump-sum items not captured by line items or $/sqft. Use for appliance package, staging furniture, landscape refresh.<span class="tipEg">Ex: 5000</span></span></span></label>
                   <input id="rehabAllowance3" inputmode="decimal" placeholder="e.g. 5000" />
                 </div>
               </div>
@@ -1114,23 +1223,23 @@
 
             <div class="formgrid">
               <div class="fg w4">
-                <label for="offerPrice">Offer Price</label>
+                <label for="offerPrice">Offer Price<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">What you'd offer for the property. The calculator shows whether this offer meets your profit target (PASS) or kills the deal (FAIL).<span class="tipEg">Ex: 220000</span></span></span></label>
                 <input id="offerPrice" inputmode="decimal" placeholder="e.g. 250000" />
               </div>
 
               <div class="fg w4">
-                <label for="purchaseCostsPct">Purchase Costs %</label>
+                <label for="purchaseCostsPct">Purchase Costs %<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Closing costs paid by buyer at acquisition. Title insurance, attorney, recording fees, misc fees. Capped at 10%.<span class="tipEg">Ex: 1 to 2 (typical Illinois)</span></span></span></label>
                 <input id="purchaseCostsPct" inputmode="decimal" placeholder="1" />
                 <div class="hint">Title, recording, attorney, misc (typical 1–2%).</div>
               </div>
 
               <div class="fg w4">
-                <label for="profitTarget">Profit Target ($)</label>
+                <label for="profitTarget">Profit Target ($)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Minimum profit you require to take on the deal. Below $25k usually isn't worth flipper risk. Calculator FAILs the deal if projected profit is below this.<span class="tipEg">Ex: 30000</span></span></span></label>
                 <input id="profitTarget" inputmode="decimal" placeholder="e.g. 30000" />
               </div>
 
               <div class="fg w4">
-                <label for="maoRule">MAO Rule</label>
+                <label for="maoRule">MAO Rule<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">How Max Allowable Offer is calculated. Custom uses your full cost structure (most accurate). 70/75/80% rules are industry shortcuts: ARV × rule% − Rehab.<span class="tipEg">Custom for real deals, 70% Rule for quick sanity check</span></span></span></label>
                 <select id="maoRule">
                   <option value="custom" selected>Custom (ARV − all costs − profit)</option>
                   <option value="70">70% Rule (ARV × 70% − Rehab)</option>
@@ -1141,12 +1250,12 @@
               </div>
 
               <div class="fg w4">
-                <label for="holdMonths">Hold Months</label>
+                <label for="holdMonths">Hold Months<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total months from purchase to closing on sale. Includes closing-purchase + rehab + listing + closing-sale. Be realistic — most flips run 4-7 months.<span class="tipEg">Ex: 5 (typical flip), 6 (safer assumption)</span></span></span></label>
                 <input id="holdMonths" inputmode="decimal" placeholder="e.g. 4" />
               </div>
 
               <div class="fg w4">
-                <label for="sellPct">Selling Costs % (of ARV)</label>
+                <label for="sellPct">Selling Costs % (of ARV)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">What % of ARV you'll pay to sell. Includes buyer-agent commission + transfer tax + staging + credits. Listing agent saves ~3%.<span class="tipEg">Ex: 3.5 (you're listing agent) or 7 (you're not)</span></span></span></label>
                 <input id="sellPct" inputmode="decimal" placeholder="e.g. 8" />
                 <div class="hint">Buyer agent + transfer tax + staging + credits.</div>
               </div>
@@ -1158,19 +1267,19 @@
 
             <div class="formgrid">
               <div class="fg">
-                <label for="holdTax">Tax / mo</label>
+                <label for="holdTax">Tax / mo<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Monthly property tax during your hold period. Pull from county assessor records. Don't estimate — taxes vary wildly by township.<span class="tipEg">Ex: 900 (typical McHenry Co. on $300k home)</span></span></span></label>
                 <input id="holdTax" inputmode="decimal" placeholder="e.g. 900" />
               </div>
               <div class="fg">
-                <label for="holdIns">Insurance / mo</label>
+                <label for="holdIns">Insurance / mo<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Vacant-home insurance during rehab + listing. Premium is usually 2-3x normal homeowner insurance because property is unoccupied.<span class="tipEg">Ex: 150</span></span></span></label>
                 <input id="holdIns" inputmode="decimal" placeholder="e.g. 150" />
               </div>
               <div class="fg">
-                <label for="holdUtil">Utilities / mo</label>
+                <label for="holdUtil">Utilities / mo<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Power, water, gas during hold. Even vacant homes need minimal utilities for showings, contractors, and freeze prevention in winter.<span class="tipEg">Ex: 250</span></span></span></label>
                 <input id="holdUtil" inputmode="decimal" placeholder="e.g. 250" />
               </div>
               <div class="fg">
-                <label for="holdHoa">HOA / mo</label>
+                <label for="holdHoa">HOA / mo<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Homeowner association fees if applicable. Some Chicago suburbs charge $0; townhome / condo communities can be $200-500/mo.<span class="tipEg">Ex: 0 or 250</span></span></span></label>
                 <input id="holdHoa" inputmode="decimal" placeholder="0" />
               </div>
             </div>
@@ -1180,28 +1289,43 @@
             </div>
 
             <div class="formgrid">
+              <div class="fg w6">
+                <label for="loanType">Loan Type<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Hard Money / Bridge: typical flip loan — interest-only monthly, principal paid back at sale. Amortizing: conventional / HELOC — pay both principal + interest each month. Cash: no loan.<span class="tipEg">Pick based on actual financing plan</span></span></span></label>
+                <select id="loanType">
+                  <option value="cash" selected>Cash (no loan)</option>
+                  <option value="interest_only">Hard Money / Bridge (Interest-Only)</option>
+                  <option value="amortizing">Conventional / HELOC (Amortizing)</option>
+                </select>
+              </div>
+              <div class="fg w6" id="loanTermBox" style="display:none">
+                <label for="loanTerm">Loan Term (years)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Amortization period in years. 30 for conventional mortgage, 15 for shorter conventional. Used to calculate monthly P+I payment, even though you'll only hold for a few months.<span class="tipEg">Ex: 30 (most common)</span></span></span></label>
+                <input id="loanTerm" inputmode="decimal" placeholder="e.g. 30" value="30" />
+              </div>
+            </div>
+
+            <div class="formgrid" style="margin-top:10px">
               <div class="fg w4">
-                <label for="loanAmt">Loan Amount</label>
+                <label for="loanAmt">Loan Amount<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total amount borrowed for purchase + rehab. Leave 0 if cash deal. Common: 75-90% of purchase + 100% of rehab on hard money.<span class="tipEg">Ex: 200000</span></span></span></label>
                 <input id="loanAmt" inputmode="decimal" placeholder="e.g. 200000" />
               </div>
               <div class="fg w4">
-                <label for="loanRate">Interest Rate %</label>
+                <label for="loanRate">Interest Rate %<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Annual interest rate. Hard money: 9-13%. DSCR/conventional: see current market. Calculator computes interest cost = loan × rate% ÷ 12 × hold months.<span class="tipEg">Ex: 10.5 (hard money), 7 (conventional)</span></span></span></label>
                 <input id="loanRate" inputmode="decimal" placeholder="e.g. 10.5" />
               </div>
               <div class="fg w4">
-                <label for="loanPoints">Points (% of loan)</label>
+                <label for="loanPoints">Points (% of loan)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Origination points paid upfront. 1 point = 1% of loan amount. Hard money lenders typically charge 1-3 points.<span class="tipEg">Ex: 2 (= $4000 on a $200k loan)</span></span></span></label>
                 <input id="loanPoints" inputmode="decimal" placeholder="e.g. 2" />
               </div>
               <div class="fg w4">
-                <label for="sellFlat">Selling Flat Fees</label>
+                <label for="sellFlat">Selling Flat Fees<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Fixed selling costs not captured in the %. Photography, MLS fees, attorney closing fee, courier, drone shots.<span class="tipEg">Ex: 2000</span></span></span></label>
                 <input id="sellFlat" inputmode="decimal" placeholder="e.g. 2000" />
               </div>
               <div class="fg w4">
-                <label for="holdExtra">Other Holding Extras</label>
+                <label for="holdExtra">Other Holding Extras<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Lump-sum holding costs beyond the monthly recurring. Examples: one-time lawn cleanup, snow removal contract, security system.<span class="tipEg">Ex: 500</span></span></span></label>
                 <input id="holdExtra" inputmode="decimal" placeholder="e.g. 500" />
               </div>
               <div class="fg w4">
-                <label>Calc'd Interest Cost</label>
+                <label>Calc'd Interest Cost<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Auto-calculated total interest you'll pay on the loan during the hold period. = Loan × Rate% ÷ 12 × Hold Months + Points fee.<span class="tipEg">Calculated for you</span></span></span></label>
                 <input id="calcInterest" disabled />
               </div>
             </div>
@@ -1255,34 +1379,34 @@
           <div class="bd">
             <div class="kpiGrid">
               <div class="kpi">
-                <p class="t">After Repair Value (ARV)</p>
+                <p class="t">After Repair Value (ARV)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">What the property will sell for AFTER rehab is complete. Calculated from comps using the selected ARV method.<span class="tipEg">The single most important number</span></span></span></p>
                 <p class="v" id="arvOut">$0</p>
                 <p class="mini" id="arvMeta">0 comps selected</p>
               </div>
               <div class="kpi">
-                <p class="t">Max Allowable Offer (MAO)</p>
+                <p class="t">Max Allowable Offer (MAO)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Maximum price you can offer and still hit your profit target. Going above this guarantees the deal underperforms.<span class="tipEg">Offer ≤ MAO = deal works</span></span></span></p>
                 <p class="v" id="maoOut">$0</p>
                 <p class="mini" id="maoMeta">Custom rule</p>
               </div>
 
               <div class="kpi">
-                <p class="t">Projected Profit (at Offer)</p>
+                <p class="t">Projected Profit (at Offer)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Estimated profit if you actually buy at your entered Offer Price. = ARV − all-in costs.<span class="tipEg">Should be ≥ your profit target</span></span></span></p>
                 <p class="v" id="profitOut">$0</p>
                 <p class="mini" id="profitMeta">—</p>
               </div>
               <div class="kpi">
-                <p class="t">Cash-on-Cash ROI</p>
+                <p class="t">Cash-on-Cash ROI<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Your return as a % of cash actually invested (excludes loan). Higher ROI = more efficient use of your capital.<span class="tipEg">20%+ is good; 50%+ is excellent</span></span></span></p>
                 <p class="v" id="roiOut">0%</p>
                 <p class="mini" id="roiMeta">Enter loan for accurate ROI</p>
               </div>
 
               <div class="kpi">
-                <p class="t">All-in Cost</p>
+                <p class="t">All-in Cost<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total money you'll spend if you proceed: offer + rehab + holding + selling + adjustments + purchase costs.<span class="tipEg">What this deal really costs you</span></span></span></p>
                 <p class="v" id="allInOut">$0</p>
                 <p class="mini" id="allInMeta">Offer + costs + rehab</p>
               </div>
               <div class="kpi">
-                <p class="t">Verdict</p>
+                <p class="t">Verdict<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">PASS = offer ≤ MAO AND projected profit ≥ target. FAIL = either condition missed. Look at verdict meta for specifics.<span class="tipEg">PASS = move forward; FAIL = walk or re-offer</span></span></span></p>
                 <div class="badge warn" id="finalBadge"><span class="dot"></span><span id="finalOut">—</span></div>
                 <p class="mini" id="verdictMeta">Awaiting inputs</p>
               </div>
@@ -1292,24 +1416,58 @@
 
             <div class="formgrid">
               <div class="fg w6">
-                <label>ARV $/SqFt</label>
+                <label>ARV $/SqFt<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">ARV divided by subject above-grade sqft. Compare to local market $/sqft to sanity-check your ARV.<span class="tipEg">If local market is $180/sqft, your ARV should be near that</span></span></span></label>
                 <input id="pricePerSqftDisplay" disabled />
               </div>
               <div class="fg w6">
-                <label>Rehab $/SqFt</label>
+                <label>Rehab $/SqFt<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Rehab budget divided by sqft. Tells you the intensity level: <$35 cosmetic, $35-65 medium, >$65 heavy.<span class="tipEg">Most flips: $35-50/sqft</span></span></span></label>
                 <input id="rehabPerSqftDisplay" disabled />
               </div>
               <div class="fg w6">
-                <label>70% Rule MAO (sanity)</label>
+                <label>70% Rule MAO (sanity)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Quick industry sanity check: ARV × 70% − Rehab. Compares to your custom MAO. If wildly different, review your cost model.<span class="tipEg">Conservative offer ceiling</span></span></span></label>
                 <input id="rule70Display" disabled />
               </div>
               <div class="fg w6">
-                <label>Annualized ROI</label>
+                <label>Annualized ROI<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Cash-on-cash ROI converted to annual equivalent. = ROI × (12 ÷ hold months). Lets you compare deals of different lengths.<span class="tipEg">Aim for 50%+ annualized on a flip</span></span></span></label>
                 <input id="annRoiDisplay" disabled />
               </div>
             </div>
 
             <div id="warningsBox"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>Capital Requirements</h2>
+              <p class="sub">Cash you'll need to start and survive the hold</p>
+            </div>
+            <span class="chip" id="loanTypeChip">Cash Deal</span>
+          </div>
+          <div class="bd">
+            <div class="kpiGrid">
+              <div class="kpi">
+                <p class="t">Cash to Close<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Cash required at the closing table. = Offer + Purchase Costs − Loan Amount. This is what you need liquid on Day 1.<span class="tipEg">Ex: $220k offer − $180k loan = $40k cash needed</span></span></span></p>
+                <p class="v" id="cashToCloseOut">$0</p>
+                <p class="mini" id="cashToCloseMeta">Down payment + closing costs</p>
+              </div>
+              <div class="kpi">
+                <p class="t">Total Cash Invested<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total of-pocket cash through the entire deal: cash-to-close + rehab + holding + selling − loan amount. This is your max capital at risk.<span class="tipEg">If you don't have this much, you can't do the deal</span></span></span></p>
+                <p class="v" id="totalCashOut">$0</p>
+                <p class="mini" id="totalCashMeta">Max capital at risk</p>
+              </div>
+              <div class="kpi">
+                <p class="t">Monthly Cash Need (Hold)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Cash you need every month during the hold: loan payment (P+I or interest-only) + tax + insurance + utilities + HOA. If your reserves can't cover this for full hold, you risk losing the deal.<span class="tipEg">Reserve target: this × hold months + 2 extra months buffer</span></span></span></p>
+                <p class="v" id="monthlyNeedOut">$0</p>
+                <p class="mini" id="monthlyNeedMeta">Loan + holding</p>
+              </div>
+              <div class="kpi">
+                <p class="t">Reserves Recommended<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Cash you should have on hand beyond the cash-to-close. = Monthly cash need × (hold months + 2). The 2 extra months buffer covers timeline slippage.<span class="tipEg">Don't start a deal without this on hand</span></span></span></p>
+                <p class="v" id="reservesOut">$0</p>
+                <p class="mini" id="reservesMeta">Monthly need × (hold + 2)</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1323,12 +1481,12 @@
           </div>
           <div class="bd">
             <div class="kpiGrid">
-              <div class="kpi"><p class="t">Rehab Total</p><p class="v" id="rehabOut">$0</p><p class="mini" id="rehabMeta">—</p></div>
-              <div class="kpi"><p class="t">Holding Total</p><p class="v" id="holdOut">$0</p><p class="mini" id="holdMeta">—</p></div>
-              <div class="kpi"><p class="t">Selling Total</p><p class="v" id="sellOut">$0</p><p class="mini" id="sellMeta">—</p></div>
-              <div class="kpi"><p class="t">Loan Costs (int+pts)</p><p class="v" id="loanCostOut">$0</p><p class="mini" id="loanCostMeta">—</p></div>
-              <div class="kpi"><p class="t">Net Adjustments</p><p class="v" id="adjOut">$0</p><p class="mini" id="adjMeta">ADD − SUB</p></div>
-              <div class="kpi"><p class="t">Purchase Costs</p><p class="v" id="buyOut">$0</p><p class="mini" id="buyMeta">% of offer</p></div>
+              <div class="kpi"><p class="t">Rehab Total<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Your full rehab budget including contingency, design/misc, and allowances. This is what you actually commit to rehab.</span></span></p><p class="v" id="rehabOut">$0</p><p class="mini" id="rehabMeta">—</p></div>
+              <div class="kpi"><p class="t">Holding Total<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total holding costs over your entire hold period (excluding loan interest, which is broken out separately).<span class="tipEg">= Monthly × Hold Months + extras</span></span></span></p><p class="v" id="holdOut">$0</p><p class="mini" id="holdMeta">—</p></div>
+              <div class="kpi"><p class="t">Selling Total<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total cost to sell the property. = ARV × Selling% + flat fees.</span></span></p><p class="v" id="sellOut">$0</p><p class="mini" id="sellMeta">—</p></div>
+              <div class="kpi"><p class="t">Loan Costs (int+pts)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Combined loan interest over hold period plus upfront points. Often the biggest hidden cost in a flip.<span class="tipEg">Cash deals show $0 here</span></span></span></p><p class="v" id="loanCostOut">$0</p><p class="mini" id="loanCostMeta">—</p></div>
+              <div class="kpi"><p class="t">Net Adjustments<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Net of all line-item ADD/SUB adjustments. Positive = adds to costs; negative = subtracts.</span></span></p><p class="v" id="adjOut">$0</p><p class="mini" id="adjMeta">ADD − SUB</p></div>
+              <div class="kpi"><p class="t">Purchase Costs<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Closing costs paid at acquisition. = Offer × Purchase Costs %.<span class="tipEg">Title, attorney, recording</span></span></span></p><p class="v" id="buyOut">$0</p><p class="mini" id="buyMeta">% of offer</p></div>
             </div>
           </div>
         </div>
@@ -1345,19 +1503,19 @@
           <div class="bd">
             <div class="formgrid">
               <div class="fg w6">
-                <label for="rentEst">Estimated Monthly Rent</label>
+                <label for="rentEst">Estimated Monthly Rent<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Realistic monthly rent if you held this as a rental instead of flipping. Use rentometer.com or local comps. Be conservative.<span class="tipEg">Ex: 2800</span></span></span></label>
                 <input id="rentEst" inputmode="decimal" placeholder="e.g. 2800" />
               </div>
               <div class="fg w6">
-                <label for="rentExpense">Monthly Expenses (tax+ins+mgmt+maint)</label>
+                <label for="rentExpense">Monthly Expenses (tax+ins+mgmt+maint)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Total monthly costs of operating as a rental: property tax, insurance, property mgmt (8-10% of rent), maintenance reserve (5-10% of rent), vacancy reserve.<span class="tipEg">Ex: 1300 (typical for $2800/mo rent)</span></span></span></label>
                 <input id="rentExpense" inputmode="decimal" placeholder="e.g. 1300" />
               </div>
             </div>
             <div class="kpiGrid" style="margin-top:10px">
-              <div class="kpi"><p class="t">Monthly Cash Flow</p><p class="v" id="cashflowOut">$0</p><p class="mini" id="cashflowMeta">Rent − expenses</p></div>
-              <div class="kpi"><p class="t">Cap Rate (on ARV)</p><p class="v" id="capRateOut">0%</p><p class="mini">NOI ÷ ARV</p></div>
-              <div class="kpi"><p class="t">1% Rule Check</p><p class="v" id="onePctOut">—</p><p class="mini" id="onePctMeta">Rent / All-in</p></div>
-              <div class="kpi"><p class="t">DSCR Estimate</p><p class="v" id="dscrOut">—</p><p class="mini">Needs &gt; 1.20 for DSCR loan</p></div>
+              <div class="kpi"><p class="t">Monthly Cash Flow<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Rent minus monthly expenses. POSITIVE = cash-flowing rental. Negative = you're paying to own.<span class="tipEg">Want $200-500+/mo minimum on SFH rental</span></span></span></p><p class="v" id="cashflowOut">$0</p><p class="mini" id="cashflowMeta">Rent − expenses</p></div>
+              <div class="kpi"><p class="t">Cap Rate (on ARV)<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Annual NOI ÷ ARV. Measures rental yield assuming you bought at ARV (worst case). Higher = better.<span class="tipEg">Illinois SFH: 6-9% is healthy</span></span></span></p><p class="v" id="capRateOut">0%</p><p class="mini">NOI ÷ ARV</p></div>
+              <div class="kpi"><p class="t">1% Rule Check<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Quick rental viability test: monthly rent ÷ all-in cost. If ≥ 1%, deal usually cash-flows. Tough to hit in modern Chicago metro.<span class="tipEg">Ex: 0.7%–1.2% typical range</span></span></span></p><p class="v" id="onePctOut">—</p><p class="mini" id="onePctMeta">Rent / All-in</p></div>
+              <div class="kpi"><p class="t">DSCR Estimate<span class="tip" tabindex="0" aria-label="Help"><svg viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><text x="8" y="11.5" text-anchor="middle" font-family="serif" font-style="italic" font-size="10" font-weight="600">i</text></svg><span class="tipBody">Debt Service Coverage Ratio: net rental income ÷ monthly debt service. DSCR lenders want ≥ 1.20 to qualify.<span class="tipEg">≥1.20 = qualifies for DSCR loan</span></span></span></p><p class="v" id="dscrOut">—</p><p class="mini">Needs &gt; 1.20 for DSCR loan</p></div>
             </div>
           </div>
         </div>
@@ -1812,13 +1970,74 @@
       const rate = num("loanRate",0);
       const points = num("loanPoints",0);
       const months = num("holdMonths",0);
+      const type = ($("loanType") && $("loanType").value) || "cash";
+      const termYears = num("loanTerm", 30);
 
-      // Interest-only model (typical for hard money flips)
-      // Monthly interest = loan * (rate/12)
-      const monthlyInt = loan * (rate/100/12);
-      const totalInt = monthlyInt * months;
+      if (loan <= 0 || type === "cash"){
+        return { totalInt:0, pointCost:0, total:0, monthlyInt:0, monthlyPayment:0, principalPaid:0, loanBalance:loan };
+      }
+
       const pointCost = loan * (points/100);
-      return { totalInt, pointCost, total: totalInt + pointCost, monthlyInt };
+      const r = rate/100/12; // monthly rate
+
+      if (type === "interest_only"){
+        // Hard money / bridge: interest-only, principal due at end
+        const monthlyInt = loan * r;
+        const totalInt = monthlyInt * months;
+        return {
+          totalInt,
+          pointCost,
+          total: totalInt + pointCost,
+          monthlyInt,           // monthly out-of-pocket interest
+          monthlyPayment: monthlyInt,  // total monthly = just interest
+          principalPaid: 0,
+          loanBalance: loan
+        };
+      }
+
+      // Amortizing loan: calculate true monthly P+I payment, then sum interest for hold months
+      const n = termYears * 12;
+      if (r === 0 || n === 0){
+        // Edge case: 0% rate or 0 term — degenerate
+        const monthlyPayment = n > 0 ? loan / n : 0;
+        const principalPaid = monthlyPayment * months;
+        return {
+          totalInt: 0,
+          pointCost,
+          total: pointCost,
+          monthlyInt: 0,
+          monthlyPayment,
+          principalPaid: Math.min(principalPaid, loan),
+          loanBalance: Math.max(0, loan - principalPaid)
+        };
+      }
+
+      // Standard amortization formula: M = P * r / (1 - (1+r)^-n)
+      const monthlyPayment = loan * r / (1 - Math.pow(1 + r, -n));
+
+      // Sum actual interest paid over hold months
+      let balance = loan;
+      let totalInt = 0;
+      let principalPaid = 0;
+      const heldMonths = Math.min(months, n);
+      for (let m = 0; m < heldMonths; m++){
+        const interestThisMonth = balance * r;
+        const principalThisMonth = monthlyPayment - interestThisMonth;
+        totalInt += interestThisMonth;
+        principalPaid += principalThisMonth;
+        balance -= principalThisMonth;
+        if (balance < 0) balance = 0;
+      }
+
+      return {
+        totalInt,
+        pointCost,
+        total: totalInt + pointCost,
+        monthlyInt: totalInt / Math.max(1, heldMonths),  // avg monthly interest
+        monthlyPayment,        // full P+I payment
+        principalPaid,
+        loanBalance: balance
+      };
     }
 
     function getHoldingTotal(){
@@ -1926,7 +2145,9 @@
 
       // Cash-on-cash ROI (proper calculation)
       const loan = num("loanAmt",0);
-      const cashInvested = Math.max(0, allIn - loan);
+      const _loanType = ($("loanType") && $("loanType").value) || "cash";
+      const _effectiveLoan = (_loanType === "cash") ? 0 : loan;
+      const cashInvested = Math.max(0, allIn - _effectiveLoan);
       const roi = cashInvested>0 ? (projectedProfit / cashInvested)*100 : 0;
       $("roiOut").textContent = pct2(roi);
       $("roiMeta").textContent = cashInvested>0
@@ -1960,6 +2181,61 @@
       $("sellMeta").textContent = `${clamp(num("sellPct",8),0,20)}% of ARV + flat`;
       $("buyMeta").textContent = `${clamp(num("purchaseCostsPct",1),0,10)}% of offer`;
       $("loanCostMeta").textContent = loanCosts.total>0 ? `${months}mo int + ${money0(loanCosts.pointCost)} pts` : "—";
+
+      // ============================================================
+      // CAPITAL REQUIREMENTS — new KPIs for loan-type-aware cash modeling
+      // ============================================================
+      const loanType = ($("loanType") && $("loanType").value) || "cash";
+
+      // Show/hide the loan term field based on type
+      const termBox = $("loanTermBox");
+      if (termBox) termBox.style.display = (loanType === "amortizing") ? "" : "none";
+
+      // Chip label
+      const loanTypeLabels = {
+        cash: "Cash Deal",
+        interest_only: "Hard Money / Bridge (I/O)",
+        amortizing: "Amortizing Loan"
+      };
+      if ($("loanTypeChip")) $("loanTypeChip").textContent = loanTypeLabels[loanType] || "Cash Deal";
+
+      // Cash to Close = Offer + Purchase Costs - effective Loan Amount
+      // (this is the literal day-1 cash needed at closing table)
+      // If loan type is cash, treat loan as 0 even if user has entered an amount
+      const effectiveLoan = (loanType === "cash") ? 0 : loan;
+      const cashToClose = Math.max(0, offer + purchaseCosts - effectiveLoan);
+      $("cashToCloseOut").textContent = money0(cashToClose);
+      $("cashToCloseMeta").textContent = effectiveLoan > 0
+        ? `Offer ${money0(offer)} + costs − loan ${money0(effectiveLoan)}`
+        : "Cash deal — full purchase + costs";
+
+      // Total Cash Invested = All-in - effective Loan
+      // (max capital at risk through the whole deal)
+      const totalCashInvested = Math.max(0, allIn - effectiveLoan);
+      $("totalCashOut").textContent = money0(totalCashInvested);
+      $("totalCashMeta").textContent = effectiveLoan > 0
+        ? `All-in ${money0(allIn)} − loan`
+        : "All money is your money";
+
+      // Monthly Cash Need = loan payment (P+I or I/O) + monthly holding (tax, ins, util, hoa)
+      const monthlyLoanPmt = (loanType === "cash" || loan <= 0) ? 0 : (loanCosts.monthlyPayment || 0);
+      const monthlyHolding = getMonthlyHolding();
+      const monthlyNeed = monthlyLoanPmt + monthlyHolding;
+      $("monthlyNeedOut").textContent = money0(monthlyNeed);
+
+      const monthlyNeedParts = [];
+      if (monthlyLoanPmt > 0){
+        monthlyNeedParts.push(loanType === "amortizing" ? `${money0(monthlyLoanPmt)} P+I` : `${money0(monthlyLoanPmt)} int`);
+      }
+      if (monthlyHolding > 0){
+        monthlyNeedParts.push(`${money0(monthlyHolding)} holding`);
+      }
+      $("monthlyNeedMeta").textContent = monthlyNeedParts.length ? monthlyNeedParts.join(" + ") : "—";
+
+      // Reserves recommended = monthly need × (hold months + 2)
+      const reservesBuffer = monthlyNeed * (months + 2);
+      $("reservesOut").textContent = money0(reservesBuffer);
+      $("reservesMeta").textContent = `${monthlyNeed > 0 ? money0(monthlyNeed) : "$0"} × ${months + 2} months`;
 
       // Rehab badge
       updateRehabBadge(rehab);
@@ -2134,7 +2410,9 @@
           sellFlat: $("sellFlat").value || "",
           loanAmt: $("loanAmt").value || "",
           loanRate: $("loanRate").value || "",
-          loanPoints: $("loanPoints").value || ""
+          loanPoints: $("loanPoints").value || "",
+          loanType: ($("loanType") && $("loanType").value) || "cash",
+          loanTerm: ($("loanTerm") && $("loanTerm").value) || "30"
         },
         adjustments: adjs,
         rental:{
@@ -2209,6 +2487,8 @@
       $("loanAmt").value = c.loanAmt || "";
       $("loanRate").value = c.loanRate || "";
       $("loanPoints").value = c.loanPoints || "";
+      if ($("loanType")) $("loanType").value = c.loanType || "cash";
+      if ($("loanTerm")) $("loanTerm").value = c.loanTerm || "30";
 
       // adjustments
       $("adjBody").innerHTML = "";
@@ -2297,6 +2577,8 @@
       $("condition").value = "average";
       $("rehabMode").value = "quick";
       $("maoRule").value = "custom";
+      if ($("loanType")) $("loanType").value = "cash";
+      if ($("loanTerm")) $("loanTerm").value = "30";
 
       // Reset ARV method
       arvMethod = "avg";
@@ -2687,7 +2969,9 @@
       }
       const months = num("holdMonths",0);
       const loan = num("loanAmt",0);
-      const cashInvested = Math.max(0, allIn - loan);
+      const pdfLoanType = ($("loanType") && $("loanType").value) || "cash";
+      const pdfEffectiveLoan = (pdfLoanType === "cash") ? 0 : loan;
+      const cashInvested = Math.max(0, allIn - pdfEffectiveLoan);
       const roi = cashInvested>0 ? (profit/cashInvested)*100 : 0;
       kv("Cash-on-Cash ROI:", pct2(roi));
       if (months > 0) kv("Annualized ROI:", pct2(roi * 12 / months));
@@ -2911,7 +3195,7 @@
      "contPct3","rehabMisc3","rehabAllowance3",
      "offerPrice","purchaseCostsPct","profitTarget","maoRule","holdMonths",
      "holdTax","holdIns","holdUtil","holdHoa","holdExtra",
-     "sellPct","sellFlat","loanAmt","loanRate","loanPoints",
+     "sellPct","sellFlat","loanAmt","loanRate","loanPoints","loanType","loanTerm",
      "rentEst","rentExpense"].forEach(id=>{
       const el = $(id);
       if (!el) return;
@@ -3002,6 +3286,20 @@
     }
     document.addEventListener("input", scheduleAutoSave);
     document.addEventListener("change", scheduleAutoSave);
+
+    // Tooltip mobile tap handler — works on touch devices
+    document.addEventListener("click", (e) => {
+      const tip = e.target.closest(".tip");
+      // Close any open tooltips first
+      document.querySelectorAll(".tip.active").forEach(t => {
+        if (t !== tip) t.classList.remove("active");
+      });
+      if (tip) {
+        e.stopPropagation();
+        e.preventDefault();
+        tip.classList.toggle("active");
+      }
+    });
 
     // Boot
     (function boot(){
