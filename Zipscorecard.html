@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#fafaf7" />
+  <title>DHP Estate · Zip Scorecard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+
+  <style>
+    /* Same design system as ARV calculator */
+    :root {
+      --brand-900: #0f2e22;
+      --brand-800: #14402f;
+      --brand-700: #1a523c;
+      --brand-600: #226b4f;
+      --brand-500: #2d8964;
+      --brand-100: #d8ebe1;
+      --brand-50:  #eef6f1;
+      --gold-700: #8a6a18;
+      --gold-500: #b8902a;
+      --gold-300: #e2c463;
+      --gold-100: #f4e8c1;
+      --signal-pos: #1f7a4d;
+      --signal-pos-bg: #e6f3ec;
+      --signal-neg: #b3261e;
+      --signal-neg-bg: #fce9e7;
+      --signal-warn: #8a5d00;
+      --signal-warn-bg: #faf0d7;
+      --ink-900: #1a1a1a;
+      --ink-700: #3d3d3d;
+      --ink-600: #525252;
+      --ink-500: #6e6e6e;
+      --ink-400: #8a8a8a;
+      --ink-300: #b3b3b3;
+      --ink-200: #d4d4d4;
+      --ink-100: #e8e6e1;
+      --ink-50:  #f5f3ee;
+      --paper:   #fafaf7;
+      --white:   #ffffff;
+      --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+      --font-mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+      --font-serif: "Source Serif 4", Georgia, serif;
+      --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+      --r1: 4px; --r2: 6px; --r3: 8px;
+      --border: 1px solid var(--ink-100);
+      --t1: 120ms ease;
+    }
+    [data-theme="dark"] {
+      --brand-50: #102a20; --brand-100: #133929; --brand-500: #4cae84;
+      --brand-600: #6cc59d; --brand-700: #8bd5b3;
+      --gold-100: #3d2f15; --gold-300: #c5a346; --gold-500: #e2c463;
+      --signal-pos: #4cae84; --signal-pos-bg: #102a20;
+      --signal-neg: #ef6259; --signal-neg-bg: #2a1311;
+      --signal-warn: #d8a83a; --signal-warn-bg: #2a2110;
+      --ink-900: #f0eee9; --ink-700: #d0cdc6; --ink-600: #adaaa3;
+      --ink-500: #8e8b85; --ink-400: #6d6a64; --ink-300: #4d4a45;
+      --ink-200: #36332e; --ink-100: #26241f; --ink-50: #1a1814;
+      --paper: #131210; --white: #1a1814;
+      --border: 1px solid var(--ink-200);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-ui);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink-900);
+      background: var(--paper);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: var(--s4) var(--s4) var(--s7); }
+
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center;
+      justify-content: space-between; padding: var(--s4) 0;
+      border-bottom: 2px solid var(--brand-900); margin-bottom: var(--s5);
+      position: sticky; top: 0; z-index: 10; background: var(--paper);
+    }
+    .brand { display: flex; gap: var(--s3); align-items: center; }
+    .brand .logo {
+      width: 36px; height: 36px; background: var(--brand-900); color: var(--white);
+      font-family: var(--font-serif); font-weight: 600; font-size: 20px;
+      display: grid; place-items: center; border-radius: var(--r2);
+    }
+    [data-theme="dark"] .brand .logo { background: var(--brand-500); color: var(--brand-900); }
+    .brand h1 {
+      margin: 0; font-family: var(--font-serif); font-size: 18px;
+      font-weight: 600; letter-spacing: -0.01em; color: var(--ink-900);
+    }
+    .brand p {
+      margin: 2px 0 0; font-size: 11px; color: var(--ink-500);
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+
+    .btn {
+      font-family: var(--font-ui); font-weight: 500; font-size: 13px;
+      padding: 8px 14px; border-radius: var(--r2);
+      border: 1px solid var(--ink-200); background: var(--white); color: var(--ink-900);
+      cursor: pointer; transition: background var(--t1), border-color var(--t1);
+    }
+    .btn:hover { background: var(--ink-50); border-color: var(--ink-300); }
+    .btn.primary { background: var(--brand-700); border-color: var(--brand-700); color: var(--white); }
+    .btn.primary:hover { background: var(--brand-800); border-color: var(--brand-800); }
+    .themeBtn { width: 36px; padding: 8px 0; display: grid; place-items: center; }
+
+    .card {
+      background: var(--white); border: var(--border); border-radius: var(--r3);
+      overflow: hidden; margin-bottom: var(--s5);
+    }
+    .card .hd {
+      padding: var(--s4) var(--s4) var(--s3); border-bottom: var(--border);
+      background: var(--ink-50);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3);
+    }
+    .card .hd h2 {
+      margin: 0; font-family: var(--font-serif); font-size: 16px;
+      font-weight: 600; color: var(--ink-900); letter-spacing: -0.01em;
+    }
+    .card .hd .sub { margin: 3px 0 0; font-size: 12px; color: var(--ink-500); }
+    .card .bd { padding: var(--s4); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 500; padding: 3px 8px;
+      border-radius: var(--r1); background: var(--ink-100); color: var(--ink-700);
+      letter-spacing: 0.02em; white-space: nowrap;
+    }
+    .chip.good { background: var(--signal-pos-bg); color: var(--signal-pos); }
+    .chip.bad { background: var(--signal-neg-bg); color: var(--signal-neg); }
+    .chip.warn { background: var(--signal-warn-bg); color: var(--signal-warn); }
+
+    /* CSV drop zones */
+    .dropGrid {
+      display: grid;
+      gap: var(--s3);
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 720px) { .dropGrid { grid-template-columns: 1fr; } }
+
+    .dropZone {
+      border: 2px dashed var(--ink-200);
+      border-radius: var(--r3);
+      padding: var(--s4);
+      text-align: center;
+      transition: all var(--t1);
+      cursor: pointer;
+      background: var(--ink-50);
+    }
+    .dropZone:hover { border-color: var(--brand-500); background: var(--brand-50); }
+    .dropZone.dragover { border-color: var(--brand-700); background: var(--brand-100); border-style: solid; }
+    .dropZone.loaded { border-style: solid; border-color: var(--signal-pos); background: var(--signal-pos-bg); }
+    .dropZone h4 {
+      margin: 0 0 var(--s2);
+      font-family: var(--font-ui); font-weight: 600; font-size: 13px;
+    }
+    .dropZone p {
+      margin: 0 0 var(--s2); font-size: 11px; color: var(--ink-600);
+      line-height: 1.4;
+    }
+    .dropZone .status {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-500);
+      margin-top: var(--s2);
+    }
+    .dropZone.loaded .status { color: var(--signal-pos); font-weight: 600; }
+    .dropZone a {
+      color: var(--brand-700); text-decoration: underline;
+      font-size: 11px;
+    }
+
+    /* Controls bar */
+    .controls {
+      display: flex; flex-wrap: wrap; gap: var(--s3); align-items: end;
+      margin-bottom: var(--s4);
+    }
+    label {
+      display: block; font-size: 11px; font-weight: 500;
+      color: var(--ink-600); margin: 0 0 5px; letter-spacing: 0.02em;
+    }
+    input, select {
+      font-family: var(--font-ui); font-size: 13px; color: var(--ink-900);
+      background: var(--white); border: 1px solid var(--ink-200);
+      border-radius: var(--r2); padding: 9px 11px; outline: none;
+    }
+    input[type="number"] {
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    }
+    input:focus, select:focus {
+      border-color: var(--brand-500);
+      box-shadow: 0 0 0 3px var(--brand-50);
+    }
+
+    /* Filter chips */
+    .filterRow {
+      display: flex; flex-wrap: wrap; gap: var(--s2);
+      padding: var(--s2);
+      background: var(--ink-50);
+      border: var(--border);
+      border-radius: var(--r2);
+      margin-bottom: var(--s3);
+    }
+    .filterChip {
+      padding: 5px 11px; border-radius: var(--r1); font-size: 11.5px;
+      font-weight: 500; border: 1px solid transparent; background: transparent;
+      color: var(--ink-600); cursor: pointer; user-select: none;
+      transition: background var(--t1), color var(--t1);
+    }
+    .filterChip:hover { background: var(--white); }
+    .filterChip.active {
+      background: var(--white); border-color: var(--ink-200);
+      color: var(--brand-700); font-weight: 600;
+    }
+
+    /* Results table */
+    .tblWrap { overflow: auto; border: var(--border); border-radius: var(--r2); background: var(--white); }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    th, td {
+      padding: 9px 11px; text-align: left; font-size: 12px;
+      vertical-align: middle; border-bottom: 1px solid var(--ink-100);
+    }
+    th {
+      position: sticky; top: 0; background: var(--ink-50);
+      color: var(--ink-600); font-weight: 600; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.06em; z-index: 2;
+      border-bottom: 1px solid var(--ink-200);
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    th:hover { background: var(--ink-100); }
+    th.sortAsc::after { content: " ↑"; color: var(--brand-700); }
+    th.sortDesc::after { content: " ↓"; color: var(--brand-700); }
+    tr:last-child td { border-bottom: none; }
+    td.zipCol { font-family: var(--font-mono); font-weight: 600; }
+    td.numCol { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+    td.scoreCol {
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      font-weight: 700; text-align: right;
+    }
+    td.scoreCol.s5 { color: var(--signal-pos); }
+    td.scoreCol.s4 { color: var(--brand-600); }
+    td.scoreCol.s3 { color: var(--gold-700); }
+    td.scoreCol.s2 { color: var(--signal-warn); }
+    td.scoreCol.s1 { color: var(--signal-neg); }
+    tr.targeted td { background: var(--signal-pos-bg); }
+    tr.warned td { background: var(--signal-warn-bg); }
+
+    .starBtn {
+      background: none; border: none; cursor: pointer; padding: 4px;
+      font-size: 16px; color: var(--ink-300); transition: color var(--t1);
+    }
+    .starBtn:hover { color: var(--gold-500); }
+    .starBtn.starred { color: var(--gold-500); }
+
+    .note {
+      margin-top: var(--s3); padding: var(--s3) var(--s4);
+      border-left: 3px solid var(--ink-300);
+      background: var(--ink-50);
+      border-radius: 0 var(--r2) var(--r2) 0;
+      color: var(--ink-700); font-size: 12px; line-height: 1.5;
+    }
+    .note.good { border-left-color: var(--signal-pos); background: var(--signal-pos-bg); color: var(--signal-pos); }
+    .note.warn { border-left-color: var(--signal-warn); background: var(--signal-warn-bg); color: var(--signal-warn); }
+
+    /* Score breakdown popover */
+    .scoreDetail {
+      font-size: 10px; color: var(--ink-500); font-family: var(--font-mono);
+      display: block; margin-top: 2px;
+    }
+
+    /* Stat boxes */
+    .statsGrid {
+      display: grid; gap: var(--s3); grid-template-columns: repeat(4, 1fr);
+      margin-bottom: var(--s4);
+    }
+    @media (max-width: 720px) { .statsGrid { grid-template-columns: repeat(2, 1fr); } }
+    .stat {
+      padding: var(--s3); border: var(--border); border-radius: var(--r2); background: var(--white);
+    }
+    .stat .label {
+      font-size: 10px; font-weight: 600; color: var(--ink-500);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin: 0 0 4px;
+    }
+    .stat .val {
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      font-size: 22px; font-weight: 600; color: var(--ink-900);
+      margin: 0; line-height: 1.1;
+    }
+
+    /* Target zip list (top of page) */
+    .targetList {
+      display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2);
+    }
+    .targetChip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      background: var(--brand-100); color: var(--brand-700);
+      border-radius: var(--r2); font-size: 12px;
+      font-family: var(--font-mono); font-weight: 600;
+      cursor: pointer;
+    }
+    .targetChip:hover { background: var(--brand-50); }
+
+    .empty {
+      text-align: center; padding: var(--s7) var(--s4);
+      color: var(--ink-500); font-size: 13px;
+    }
+    .empty h3 { color: var(--ink-700); margin: 0 0 var(--s2); font-family: var(--font-serif); }
+
+    /* Help text */
+    details summary { cursor: pointer; font-weight: 600; color: var(--brand-700); }
+    details[open] summary { margin-bottom: var(--s3); }
+    .helpStep {
+      padding: var(--s3); background: var(--ink-50);
+      border-radius: var(--r2); margin-bottom: var(--s2);
+      font-size: 13px; line-height: 1.5;
+    }
+    .helpStep b { color: var(--brand-700); }
+    code {
+      background: var(--ink-100); padding: 2px 6px;
+      border-radius: var(--r1); font-size: 11.5px;
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">D</div>
+        <div>
+          <h1>Zip Scorecard</h1>
+          <p>DHP Estate · Market Analysis</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn themeBtn" id="btnTheme" title="Toggle theme">◐</button>
+        <button class="btn" id="btnReset" title="Clear all data and start over">Reset</button>
+        <a class="btn" href="https://www.redfin.com/news/data-center/downloads/" target="_blank" rel="noopener">Redfin Data ↗</a>
+        <a class="btn" href="https://www.zillow.com/research/data/" target="_blank" rel="noopener">Zillow Data ↗</a>
+      </div>
+    </div>
+
+    <!-- Target zips banner -->
+    <div class="card" id="targetCard" style="display:none">
+      <div class="hd">
+        <div>
+          <h2>Your Target Zips</h2>
+          <p class="sub">The zips you've starred — paste into MLS saved searches</p>
+        </div>
+        <button class="btn" id="copyTargets">Copy All</button>
+      </div>
+      <div class="bd">
+        <div class="targetList" id="targetList"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Load data -->
+    <div class="card">
+      <div class="hd">
+        <div>
+          <h2>Step 1 · Load Data</h2>
+          <p class="sub">Drop CSV files from Redfin and Zillow. The app stays on your device — nothing uploads.</p>
+        </div>
+        <span class="chip" id="loadStatus">No data loaded</span>
+      </div>
+      <div class="bd">
+        <details>
+          <summary>How to download the right CSVs (first time setup)</summary>
+          <div style="margin-top:var(--s3)">
+            <div class="helpStep">
+              <b>1. Redfin (most important):</b> Open <a href="https://www.redfin.com/news/data-center/downloads/" target="_blank">Redfin Data Center Downloads</a>. Scroll to find <b>"Region Type: Zip Code"</b> downloads. Get the <b>monthly</b> CSV with sales, DOM, sale-to-list, inventory. File will be named something like <code>zip_code_market_tracker.tsv000.gz</code> or similar. Drop it in zone 1.
+            </div>
+            <div class="helpStep">
+              <b>2. Zillow ZHVI (home values, for appreciation):</b> Open <a href="https://www.zillow.com/research/data/" target="_blank">Zillow Research Data</a>. Under "Home Values", set Geography to <b>ZIP Code</b>, Data Type to <b>ZHVI All Homes Time Series, Smoothed, Seasonally Adjusted</b>. Click Download. Drop in zone 2.
+            </div>
+            <div class="helpStep">
+              <b>3. Zillow Inventory (optional, for months-of-supply):</b> Same page, under "For-Sale Listings", set Geography to <b>ZIP Code</b>, Data Type to <b>For-Sale Inventory (Smooth, All Homes, Monthly)</b>. Click Download. Drop in zone 3.
+            </div>
+            <div class="helpStep">
+              <b>Refresh cadence:</b> Redfin updates weekly. Zillow updates monthly on the 16th. Re-download and re-drop quarterly is plenty.
+            </div>
+          </div>
+        </details>
+
+        <div class="dropGrid" style="margin-top:var(--s4)">
+          <div class="dropZone" id="dropRedfin">
+            <h4>1. Redfin Market Tracker</h4>
+            <p>By Zip · sales, DOM, sale-to-list, inventory</p>
+            <p class="status" id="redfinStatus">Drop CSV/TSV here, or click to pick</p>
+            <input type="file" id="fileRedfin" accept=".csv,.tsv,.gz,text/csv,text/tab-separated-values,application/gzip" style="display:none">
+          </div>
+          <div class="dropZone" id="dropZhvi">
+            <h4>2. Zillow ZHVI</h4>
+            <p>By Zip · home values + YoY appreciation</p>
+            <p class="status" id="zhviStatus">Drop CSV here, or click to pick</p>
+            <input type="file" id="fileZhvi" accept=".csv,text/csv" style="display:none">
+          </div>
+          <div class="dropZone" id="dropInv">
+            <h4>3. Zillow Inventory (optional)</h4>
+            <p>By Zip · for-sale inventory for months-of-supply</p>
+            <p class="status" id="invStatus">Drop CSV here, or click to pick</p>
+            <input type="file" id="fileInv" accept=".csv,text/csv" style="display:none">
+          </div>
+        </div>
+
+        <div class="note">
+          <b>Privacy note:</b> Files are processed entirely in your browser. Nothing is uploaded. You can disconnect from the internet and the page still works once the fonts are loaded.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Filters -->
+    <div class="card" id="filterCard" style="display:none">
+      <div class="hd">
+        <div>
+          <h2>Step 2 · Filter Markets</h2>
+          <p class="sub">Narrow to your hunting area</p>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="controls">
+          <div>
+            <label for="stateFilter">State</label>
+            <select id="stateFilter">
+              <option value="IL" selected>Illinois (IL)</option>
+              <option value="ALL">All states</option>
+            </select>
+          </div>
+          <div>
+            <label for="countyFilter">County (CSV-separated)</label>
+            <input id="countyFilter" type="text" placeholder="McHenry, Lake, Kane" value="McHenry, Lake, Kane" style="width:260px">
+          </div>
+          <div>
+            <label for="minPrice">Min Median Price</label>
+            <input id="minPrice" type="number" value="200000" style="width:130px">
+          </div>
+          <div>
+            <label for="maxPrice">Max Median Price</label>
+            <input id="maxPrice" type="number" value="600000" style="width:130px">
+          </div>
+          <div>
+            <label for="targetPriceMid">Sweet Spot ($)</label>
+            <input id="targetPriceMid" type="number" value="375000" style="width:130px">
+          </div>
+          <button class="btn primary" id="applyFilters">Apply &amp; Score</button>
+        </div>
+
+        <div class="note">
+          <b>Scoring formula:</b> Each zip gets 1–5 stars on five dimensions: price-band fit, DOM, sale-to-list ratio, YoY appreciation, inventory months. Composite is 0–100. Hover the score in the table to see breakdown.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Results -->
+    <div class="card" id="resultsCard" style="display:none">
+      <div class="hd">
+        <div>
+          <h2>Step 3 · Ranked Zips</h2>
+          <p class="sub">Star the top 3–6 to add to your Target list above. Click headers to sort.</p>
+        </div>
+        <span class="chip" id="resultsCount">0 zips</span>
+      </div>
+      <div class="bd">
+        <div class="statsGrid" id="statsGrid"></div>
+
+        <div class="filterRow">
+          <span class="filterChip active" data-tier="all">All</span>
+          <span class="filterChip" data-tier="top">Top 25%</span>
+          <span class="filterChip" data-tier="targeted">Starred only</span>
+        </div>
+
+        <div class="tblWrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-sort="targeted">★</th>
+                <th data-sort="zip">Zip</th>
+                <th data-sort="city">City</th>
+                <th data-sort="county">County</th>
+                <th data-sort="score" class="sortDesc">Score</th>
+                <th data-sort="medianPrice">Median Price</th>
+                <th data-sort="yoyAppr">YoY Apprec.</th>
+                <th data-sort="dom">DOM</th>
+                <th data-sort="saleToList">Sale/List</th>
+                <th data-sort="mos">Mos Supply</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="note good" id="recommendationNote" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" id="emptyCard">
+      <div class="bd empty">
+        <h3>No data loaded yet</h3>
+        <p>Drop a Redfin Market Tracker CSV in zone 1 above to get started.<br>You can also try the demo data to see how it works.</p>
+        <button class="btn primary" id="loadDemo" style="margin-top:var(--s3)">Load Demo Data (IL zips)</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ============================================================
+    // STATE
+    // ============================================================
+    const STORAGE_KEY = "zip_scorecard_v1";
+    const TARGETS_KEY = "zip_scorecard_targets_v1";
+    const THEME_KEY = "zip_scorecard_theme_v1";
+
+    let redfinData = null;   // map zip -> { city, county, medianPrice, dom, saleToList, inventory, salesCount }
+    let zhviData = null;     // map zip -> { value_now, value_year_ago, yoyAppr }
+    let invData = null;      // map zip -> { inventory_now }
+    let merged = [];         // [{ zip, city, county, ...stats, score, scoreBreakdown }]
+    let targetZips = new Set();
+    let sortField = "score";
+    let sortDir = "desc";
+    let tierFilter = "all";
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    const $ = id => document.getElementById(id);
+
+    function setStatus(zone, text, ok = false) {
+      const el = $(zone + "Status");
+      if (!el) return;
+      el.textContent = text;
+      const card = el.closest(".dropZone");
+      if (card) card.classList.toggle("loaded", ok);
+    }
+
+    function money(n) {
+      if (!isFinite(n) || n == null) return "—";
+      return "$" + Math.round(n).toLocaleString();
+    }
+
+    function pct(n, digits = 1) {
+      if (!isFinite(n) || n == null) return "—";
+      return (n >= 0 ? "+" : "") + n.toFixed(digits) + "%";
+    }
+
+    function num(n, digits = 0) {
+      if (!isFinite(n) || n == null) return "—";
+      return n.toFixed(digits);
+    }
+
+    function median(arr) {
+      const filtered = arr.filter(x => isFinite(x));
+      if (!filtered.length) return null;
+      const s = [...filtered].sort((a, b) => a - b);
+      const m = Math.floor(s.length / 2);
+      return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    }
+
+    // Simple CSV parser. Handles quoted fields with commas.
+    function parseCSV(text, delimiter = ",") {
+      const rows = [];
+      let currentRow = [];
+      let currentField = "";
+      let inQuotes = false;
+      let i = 0;
+      while (i < text.length) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"' && text[i + 1] === '"') {
+            currentField += '"'; i += 2; continue;
+          }
+          if (c === '"') { inQuotes = false; i++; continue; }
+          currentField += c; i++; continue;
+        }
+        if (c === '"') { inQuotes = true; i++; continue; }
+        if (c === delimiter) {
+          currentRow.push(currentField); currentField = ""; i++; continue;
+        }
+        if (c === "\r") { i++; continue; }
+        if (c === "\n") {
+          currentRow.push(currentField);
+          rows.push(currentRow);
+          currentRow = []; currentField = "";
+          i++; continue;
+        }
+        currentField += c; i++;
+      }
+      if (currentField.length || currentRow.length) {
+        currentRow.push(currentField);
+        rows.push(currentRow);
+      }
+      return rows;
+    }
+
+    function detectDelimiter(sample) {
+      // Try tab vs comma based on first few lines
+      const lines = sample.split(/\r?\n/).slice(0, 5).filter(Boolean);
+      let tabCount = 0, commaCount = 0;
+      lines.forEach(l => { tabCount += (l.match(/\t/g) || []).length; commaCount += (l.match(/,/g) || []).length; });
+      return tabCount > commaCount ? "\t" : ",";
+    }
+
+    // ============================================================
+    // PARSING — Redfin Market Tracker
+    // ============================================================
+    // Redfin's Zip CSV columns vary slightly over time but include:
+    // region, region_type, region_type_id, table_id, is_seasonally_adjusted, city, state, state_code,
+    // property_type, property_type_id, median_sale_price, median_list_price, median_ppsf, median_list_ppsf,
+    // homes_sold, pending_sales, new_listings, inventory, months_of_supply, median_dom,
+    // avg_sale_to_list, sold_above_list, price_drops, off_market_in_two_weeks,
+    // period_begin, period_end, ...
+    // We accept any column names that match these patterns case-insensitively.
+
+    function parseRedfin(text) {
+      const delimiter = detectDelimiter(text);
+      const rows = parseCSV(text, delimiter);
+      if (!rows.length) throw new Error("Empty file");
+      const headers = rows[0].map(h => h.trim().toLowerCase());
+
+      // Find column indices we care about
+      const colIdx = name => headers.findIndex(h => h === name || h.replace(/[^a-z0-9]/g, "") === name.replace(/[^a-z0-9]/g, ""));
+      const c_region = colIdx("region");
+      const c_regionType = colIdx("region_type");
+      const c_city = colIdx("city");
+      const c_county = headers.findIndex(h => h.includes("parent_metro_region") || h === "county");
+      const c_state = colIdx("state_code");
+      const c_medianPrice = colIdx("median_sale_price");
+      const c_dom = colIdx("median_dom") !== -1 ? colIdx("median_dom") : colIdx("median_days_on_market");
+      const c_saleToList = colIdx("avg_sale_to_list");
+      const c_inventory = colIdx("inventory");
+      const c_mos = colIdx("months_of_supply");
+      const c_salesCount = colIdx("homes_sold");
+      const c_period = colIdx("period_end");
+      const c_propType = colIdx("property_type");
+
+      if (c_region === -1 || c_medianPrice === -1) {
+        throw new Error("This doesn't look like a Redfin Market Tracker file. Expected columns 'region' and 'median_sale_price'.");
+      }
+
+      // For each zip, keep only the most recent row (latest period_end)
+      // and prefer All Residential or Single Family Residential
+      const zipMap = new Map();
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row.length) continue;
+
+        // Filter: only zip-level rows
+        if (c_regionType !== -1) {
+          const rt = (row[c_regionType] || "").toLowerCase();
+          if (rt && !rt.includes("zip")) continue;
+        }
+
+        // Filter: only "All Residential" or Single Family (skip condos, townhomes)
+        if (c_propType !== -1) {
+          const pt = (row[c_propType] || "").toLowerCase();
+          if (pt && !(pt.includes("all residential") || pt.includes("single family")) ) continue;
+        }
+
+        const region = row[c_region] || "";
+        const zip = (region.match(/\d{5}/) || [])[0];
+        if (!zip) continue;
+
+        const period = c_period !== -1 ? row[c_period] : "";
+        const existing = zipMap.get(zip);
+        if (existing && existing.period >= period) continue;
+
+        const medianPrice = parseFloat(row[c_medianPrice]) || null;
+        const dom = c_dom !== -1 ? (parseFloat(row[c_dom]) || null) : null;
+        let saleToList = c_saleToList !== -1 ? (parseFloat(row[c_saleToList]) || null) : null;
+        // Convert decimal (0.98) to percent (98) if needed
+        if (saleToList !== null && saleToList < 5) saleToList *= 100;
+        const inventory = c_inventory !== -1 ? (parseFloat(row[c_inventory]) || null) : null;
+        const mos = c_mos !== -1 ? (parseFloat(row[c_mos]) || null) : null;
+        const salesCount = c_salesCount !== -1 ? (parseFloat(row[c_salesCount]) || null) : null;
+
+        zipMap.set(zip, {
+          zip,
+          city: c_city !== -1 ? row[c_city] : "",
+          county: c_county !== -1 ? (row[c_county] || "").replace(/ Metro Area$/i, "").replace(/ County$/i, "") : "",
+          state: c_state !== -1 ? row[c_state] : "",
+          medianPrice, dom, saleToList, inventory, mos, salesCount,
+          period
+        });
+      }
+
+      return zipMap;
+    }
+
+    // ============================================================
+    // PARSING — Zillow ZHVI (time series, wide format)
+    // ============================================================
+    // Format: RegionID, SizeRank, RegionName, RegionType, StateName, State, City, Metro, CountyName,
+    // followed by date columns: 2000-01-31, 2000-02-29, ... up to most recent
+    function parseZhvi(text) {
+      const rows = parseCSV(text, ",");
+      if (rows.length < 2) throw new Error("Empty file");
+      const headers = rows[0].map(h => h.trim());
+      const lowerH = headers.map(h => h.toLowerCase());
+
+      const c_region = lowerH.findIndex(h => h === "regionname");
+      const c_regionType = lowerH.findIndex(h => h === "regiontype");
+      const c_state = lowerH.findIndex(h => h === "state" || h === "statename");
+      const c_city = lowerH.findIndex(h => h === "city");
+      const c_county = lowerH.findIndex(h => h === "countyname");
+
+      if (c_region === -1) throw new Error("Couldn't find 'RegionName' column. This may not be a Zillow ZHVI file.");
+
+      // Find all date columns (look like YYYY-MM-DD)
+      const dateCols = [];
+      headers.forEach((h, i) => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(h.trim())) dateCols.push({ idx: i, date: h.trim() });
+      });
+      if (!dateCols.length) throw new Error("No date columns found in ZHVI file.");
+
+      // Most recent and ~12 months ago
+      dateCols.sort((a, b) => a.date < b.date ? -1 : 1);
+      const latest = dateCols[dateCols.length - 1];
+      // Find the date approximately 12 months before latest
+      const latestDate = new Date(latest.date);
+      const yearAgoDate = new Date(latestDate); yearAgoDate.setFullYear(yearAgoDate.getFullYear() - 1);
+      let bestYearAgo = dateCols[0];
+      let bestDiff = Infinity;
+      dateCols.forEach(dc => {
+        const d = new Date(dc.date);
+        const diff = Math.abs(d - yearAgoDate);
+        if (diff < bestDiff) { bestDiff = diff; bestYearAgo = dc; }
+      });
+
+      const zipMap = new Map();
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row.length) continue;
+
+        // Zip detection
+        if (c_regionType !== -1) {
+          const rt = (row[c_regionType] || "").toLowerCase();
+          if (rt && !rt.includes("zip")) continue;
+        }
+        const region = row[c_region] || "";
+        const zip = (region.match(/\d{5}/) || [])[0];
+        if (!zip) continue;
+
+        const v_now = parseFloat(row[latest.idx]) || null;
+        const v_year = parseFloat(row[bestYearAgo.idx]) || null;
+        const yoyAppr = (v_now && v_year) ? ((v_now - v_year) / v_year) * 100 : null;
+
+        zipMap.set(zip, {
+          zip,
+          state: c_state !== -1 ? row[c_state] : "",
+          city: c_city !== -1 ? row[c_city] : "",
+          county: c_county !== -1 ? (row[c_county] || "").replace(/ County$/i, "") : "",
+          zhviNow: v_now,
+          zhviYearAgo: v_year,
+          yoyAppr
+        });
+      }
+      return zipMap;
+    }
+
+    // ============================================================
+    // PARSING — Zillow Inventory (similar time-series structure)
+    // ============================================================
+    function parseInventory(text) {
+      const rows = parseCSV(text, ",");
+      if (rows.length < 2) throw new Error("Empty file");
+      const headers = rows[0].map(h => h.trim());
+      const lowerH = headers.map(h => h.toLowerCase());
+
+      const c_region = lowerH.findIndex(h => h === "regionname");
+      const c_regionType = lowerH.findIndex(h => h === "regiontype");
+
+      if (c_region === -1) throw new Error("Couldn't find 'RegionName' column in inventory file.");
+
+      const dateCols = [];
+      headers.forEach((h, i) => { if (/^\d{4}-\d{2}-\d{2}$/.test(h.trim())) dateCols.push({ idx: i, date: h.trim() }); });
+      if (!dateCols.length) throw new Error("No date columns in inventory file.");
+      dateCols.sort((a, b) => a.date < b.date ? -1 : 1);
+      const latest = dateCols[dateCols.length - 1];
+
+      const zipMap = new Map();
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row.length) continue;
+        if (c_regionType !== -1) {
+          const rt = (row[c_regionType] || "").toLowerCase();
+          if (rt && !rt.includes("zip")) continue;
+        }
+        const region = row[c_region] || "";
+        const zip = (region.match(/\d{5}/) || [])[0];
+        if (!zip) continue;
+        const v = parseFloat(row[latest.idx]) || null;
+        zipMap.set(zip, { zip, inventoryNow: v });
+      }
+      return zipMap;
+    }
+
+    // ============================================================
+    // FILE LOADING
+    // ============================================================
+    async function readFile(file) {
+      // Handle .gz files
+      if (file.name.endsWith(".gz")) {
+        try {
+          const stream = file.stream().pipeThrough(new DecompressionStream("gzip"));
+          const r = new Response(stream);
+          return await r.text();
+        } catch (e) {
+          throw new Error("Could not decompress .gz file. Try unzipping locally first.");
+        }
+      }
+      return await file.text();
+    }
+
+    function setupDropZone(zoneId, fileInputId, statusId, handler) {
+      const zone = $(zoneId);
+      const fileInput = $(fileInputId);
+      zone.addEventListener("click", () => fileInput.click());
+      zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+      zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+      zone.addEventListener("drop", async e => {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file) await handler(file);
+      });
+      fileInput.addEventListener("change", async e => {
+        const file = e.target.files[0];
+        if (file) await handler(file);
+      });
+    }
+
+    async function loadRedfin(file) {
+      try {
+        setStatus("redfin", "Loading…");
+        const text = await readFile(file);
+        redfinData = parseRedfin(text);
+        setStatus("redfin", `✓ ${redfinData.size.toLocaleString()} zip rows`, true);
+        afterLoad();
+      } catch (e) {
+        setStatus("redfin", "✗ " + e.message);
+        console.error(e);
+      }
+    }
+
+    async function loadZhvi(file) {
+      try {
+        setStatus("zhvi", "Loading…");
+        const text = await readFile(file);
+        zhviData = parseZhvi(text);
+        setStatus("zhvi", `✓ ${zhviData.size.toLocaleString()} zip rows`, true);
+        afterLoad();
+      } catch (e) {
+        setStatus("zhvi", "✗ " + e.message);
+        console.error(e);
+      }
+    }
+
+    async function loadInv(file) {
+      try {
+        setStatus("inv", "Loading…");
+        const text = await readFile(file);
+        invData = parseInventory(text);
+        setStatus("inv", `✓ ${invData.size.toLocaleString()} zip rows`, true);
+        afterLoad();
+      } catch (e) {
+        setStatus("inv", "✗ " + e.message);
+        console.error(e);
+      }
+    }
+
+    function afterLoad() {
+      const loaded = (redfinData ? 1 : 0) + (zhviData ? 1 : 0) + (invData ? 1 : 0);
+      $("loadStatus").textContent = loaded + " of 3 sources loaded";
+      $("loadStatus").className = loaded ? "chip good" : "chip";
+      if (redfinData) {
+        $("filterCard").style.display = "";
+        $("emptyCard").style.display = "none";
+        runAnalysis();
+      }
+    }
+
+    // ============================================================
+    // ANALYSIS
+    // ============================================================
+    function runAnalysis() {
+      if (!redfinData) return;
+
+      const state = $("stateFilter").value;
+      const counties = ($("countyFilter").value || "")
+        .split(",").map(c => c.trim().toLowerCase()).filter(Boolean);
+      const minPrice = Number($("minPrice").value) || 0;
+      const maxPrice = Number($("maxPrice").value) || Infinity;
+      const targetMid = Number($("targetPriceMid").value) || ((minPrice + maxPrice) / 2);
+
+      // Merge data
+      merged = [];
+      redfinData.forEach((rf, zip) => {
+        // State filter
+        if (state !== "ALL" && rf.state && rf.state.toUpperCase() !== state) return;
+
+        // County filter
+        if (counties.length && rf.county) {
+          const cnty = rf.county.toLowerCase();
+          if (!counties.some(c => cnty.includes(c))) return;
+        }
+
+        // Price band — only filter on hard price floor, don't reject for being above max
+        if (rf.medianPrice && rf.medianPrice < minPrice * 0.5) return;
+        if (rf.medianPrice && rf.medianPrice > maxPrice * 1.5) return;
+
+        // Get Zillow data
+        const zhvi = zhviData ? zhviData.get(zip) : null;
+        const inv = invData ? invData.get(zip) : null;
+
+        // Compute months-of-supply if not provided
+        let mos = rf.mos;
+        if ((!mos || !isFinite(mos)) && rf.inventory && rf.salesCount) {
+          mos = rf.inventory / rf.salesCount;
+        }
+
+        merged.push({
+          zip,
+          city: rf.city || (zhvi && zhvi.city) || "",
+          county: rf.county || (zhvi && zhvi.county) || "",
+          state: rf.state,
+          medianPrice: rf.medianPrice,
+          dom: rf.dom,
+          saleToList: rf.saleToList,
+          inventory: rf.inventory,
+          mos,
+          yoyAppr: zhvi ? zhvi.yoyAppr : null,
+          zhviNow: zhvi ? zhvi.zhviNow : null
+        });
+      });
+
+      // Score each zip
+      merged.forEach(z => {
+        const breakdown = scoreZip(z, targetMid);
+        z.score = breakdown.composite;
+        z.scoreBreakdown = breakdown;
+      });
+
+      // Sort & render
+      sortField = "score"; sortDir = "desc";
+      renderResults();
+      $("resultsCard").style.display = "";
+      updateStats();
+    }
+
+    function scoreZip(z, targetMid) {
+      // Five 0-100 sub-scores, then averaged
+      const subs = {};
+
+      // 1. Price band fit: peak at targetMid, fall off either side
+      if (z.medianPrice != null) {
+        const delta = Math.abs(z.medianPrice - targetMid) / targetMid;
+        subs.price = Math.max(0, 100 - delta * 200); // 50% off target = 0
+      } else { subs.price = null; }
+
+      // 2. DOM: lower is better, peak at 14 days
+      if (z.dom != null) {
+        if (z.dom <= 14) subs.dom = 100;
+        else if (z.dom >= 90) subs.dom = 0;
+        else subs.dom = 100 - ((z.dom - 14) / 76) * 100;
+      } else { subs.dom = null; }
+
+      // 3. Sale-to-list: higher is better, 100% maps to 100, 90% maps to 0
+      if (z.saleToList != null) {
+        if (z.saleToList >= 100) subs.s2l = 100;
+        else if (z.saleToList <= 90) subs.s2l = 0;
+        else subs.s2l = ((z.saleToList - 90) / 10) * 100;
+      } else { subs.s2l = null; }
+
+      // 4. YoY appreciation: 6%+ = 100, 0% = 50, -10% = 0
+      if (z.yoyAppr != null) {
+        if (z.yoyAppr >= 6) subs.appr = 100;
+        else if (z.yoyAppr <= -10) subs.appr = 0;
+        else if (z.yoyAppr >= 0) subs.appr = 50 + (z.yoyAppr / 6) * 50;
+        else subs.appr = 50 + (z.yoyAppr / 10) * 50; // negative -> 0..50
+      } else { subs.appr = null; }
+
+      // 5. Months of supply: lower = better, 1 mo or less = 100, 6+ = 0
+      if (z.mos != null && isFinite(z.mos)) {
+        if (z.mos <= 1) subs.mos = 100;
+        else if (z.mos >= 6) subs.mos = 0;
+        else subs.mos = 100 - ((z.mos - 1) / 5) * 100;
+      } else { subs.mos = null; }
+
+      // Composite: weighted average of available subs
+      const weights = { price: 1.0, dom: 1.2, s2l: 1.0, appr: 1.3, mos: 1.0 };
+      let total = 0, weightSum = 0;
+      Object.keys(subs).forEach(k => {
+        if (subs[k] != null) {
+          total += subs[k] * weights[k];
+          weightSum += weights[k];
+        }
+      });
+      const composite = weightSum > 0 ? total / weightSum : null;
+
+      return {
+        ...subs,
+        composite: composite != null ? Math.round(composite) : null,
+        hasAllSignals: Object.keys(subs).every(k => subs[k] != null)
+      };
+    }
+
+    function renderResults() {
+      const tbody = $("resultsBody");
+      tbody.innerHTML = "";
+
+      let display = [...merged];
+
+      // Tier filter
+      if (tierFilter === "targeted") {
+        display = display.filter(z => targetZips.has(z.zip));
+      } else if (tierFilter === "top") {
+        display.sort((a, b) => (b.score || 0) - (a.score || 0));
+        display = display.slice(0, Math.ceil(display.length / 4));
+      }
+
+      // Sort
+      display.sort((a, b) => {
+        let av = a[sortField], bv = b[sortField];
+        if (sortField === "targeted") {
+          av = targetZips.has(a.zip) ? 1 : 0;
+          bv = targetZips.has(b.zip) ? 1 : 0;
+        }
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        if (typeof av === "string") return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+        return sortDir === "asc" ? av - bv : bv - av;
+      });
+
+      display.forEach(z => {
+        const tr = document.createElement("tr");
+        if (targetZips.has(z.zip)) tr.classList.add("targeted");
+        const sb = z.scoreBreakdown;
+        if (sb && !sb.hasAllSignals) tr.classList.add("warned");
+
+        const scoreTier = z.score == null ? "" : (z.score >= 80 ? "s5" : z.score >= 65 ? "s4" : z.score >= 50 ? "s3" : z.score >= 35 ? "s2" : "s1");
+        const breakdownStr = sb ? `Price:${num(sb.price,0)} · DOM:${num(sb.dom,0)} · S/L:${num(sb.s2l,0)} · Apprec:${num(sb.appr,0)} · MoS:${num(sb.mos,0)}` : "";
+
+        tr.innerHTML = `
+          <td><button class="starBtn ${targetZips.has(z.zip) ? 'starred' : ''}" data-zip="${z.zip}" title="Mark as target">${targetZips.has(z.zip) ? '★' : '☆'}</button></td>
+          <td class="zipCol">${z.zip}</td>
+          <td>${z.city || "—"}</td>
+          <td>${z.county || "—"}</td>
+          <td class="scoreCol ${scoreTier}" title="${breakdownStr}">${z.score != null ? z.score : "—"}<span class="scoreDetail">${breakdownStr}</span></td>
+          <td class="numCol">${money(z.medianPrice)}</td>
+          <td class="numCol">${pct(z.yoyAppr)}</td>
+          <td class="numCol">${z.dom != null ? Math.round(z.dom) : "—"}</td>
+          <td class="numCol">${z.saleToList != null ? z.saleToList.toFixed(1) + "%" : "—"}</td>
+          <td class="numCol">${z.mos != null && isFinite(z.mos) ? z.mos.toFixed(1) : "—"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      $("resultsCount").textContent = display.length + " zips";
+
+      // Star button listeners
+      tbody.querySelectorAll(".starBtn").forEach(b => {
+        b.addEventListener("click", e => {
+          e.stopPropagation();
+          const zip = b.dataset.zip;
+          if (targetZips.has(zip)) targetZips.delete(zip);
+          else targetZips.add(zip);
+          saveTargets();
+          renderResults();
+          renderTargets();
+        });
+      });
+
+      // Update header sort indicators
+      document.querySelectorAll("th[data-sort]").forEach(th => {
+        th.classList.remove("sortAsc", "sortDesc");
+        if (th.dataset.sort === sortField) {
+          th.classList.add(sortDir === "asc" ? "sortAsc" : "sortDesc");
+        }
+      });
+
+      renderRecommendation(display);
+    }
+
+    function renderRecommendation(display) {
+      const note = $("recommendationNote");
+      const top = display.filter(z => z.score != null).slice(0, 6);
+      if (!top.length) { note.style.display = "none"; return; }
+
+      const top3 = top.slice(0, 3).map(z => `${z.zip} (${z.city || "?"}, score ${z.score})`).join(", ");
+      const minScore = top[top.length - 1].score;
+      const maxScore = top[0].score;
+
+      note.innerHTML = `<b>Quick read:</b> Your strongest markets right now are <b>${top3}</b>. Score range in top 6: ${minScore}–${maxScore}. Star 3–6 to lock in your target list, then update your MLS DH-01a / DH-02 saved searches to these zips only.`;
+      note.style.display = "";
+    }
+
+    function updateStats() {
+      const valid = merged.filter(z => z.score != null);
+      const grid = $("statsGrid");
+      const stats = [
+        { label: "Zips Analyzed", val: merged.length.toString() },
+        { label: "Median Score", val: valid.length ? Math.round(median(valid.map(z => z.score))) : "—" },
+        { label: "Median Price", val: money(median(merged.map(z => z.medianPrice))) },
+        { label: "Median DOM", val: num(median(merged.map(z => z.dom).filter(x => x != null))) }
+      ];
+      grid.innerHTML = stats.map(s => `<div class="stat"><p class="label">${s.label}</p><p class="val">${s.val}</p></div>`).join("");
+    }
+
+    function renderTargets() {
+      const list = $("targetList");
+      const card = $("targetCard");
+      if (!targetZips.size) { card.style.display = "none"; return; }
+      card.style.display = "";
+
+      const zipsArr = [...targetZips].sort();
+      list.innerHTML = zipsArr.map(z => {
+        const m = merged.find(x => x.zip === z);
+        const city = m ? (m.city || "") : "";
+        return `<span class="targetChip" data-zip="${z}" title="Click to copy ${z}">★ ${z}${city ? " (" + city + ")" : ""}</span>`;
+      }).join("");
+
+      list.querySelectorAll(".targetChip").forEach(c => {
+        c.addEventListener("click", () => {
+          navigator.clipboard.writeText(c.dataset.zip);
+          const old = c.textContent;
+          c.textContent = "✓ Copied " + c.dataset.zip;
+          setTimeout(() => c.textContent = old, 1200);
+        });
+      });
+    }
+
+    function saveTargets() {
+      try { localStorage.setItem(TARGETS_KEY, JSON.stringify([...targetZips])); } catch (e) {}
+    }
+
+    function loadTargets() {
+      try {
+        const raw = localStorage.getItem(TARGETS_KEY);
+        if (raw) targetZips = new Set(JSON.parse(raw));
+      } catch (e) {}
+    }
+
+    // ============================================================
+    // DEMO DATA
+    // ============================================================
+    const DEMO_ZIPS = [
+      // Realistic but rounded numbers for IL zips in McHenry/Lake/Kane
+      { zip: "60014", city: "Crystal Lake", county: "McHenry", state: "IL", medianPrice: 365000, dom: 22, saleToList: 99.4, inventory: 32, mos: 1.4, yoyAppr: 5.2, salesCount: 23 },
+      { zip: "60102", city: "Algonquin", county: "McHenry", state: "IL", medianPrice: 405000, dom: 28, saleToList: 98.9, inventory: 42, mos: 1.8, yoyAppr: 4.8, salesCount: 24 },
+      { zip: "60013", city: "Cary", county: "McHenry", state: "IL", medianPrice: 385000, dom: 25, saleToList: 99.1, inventory: 28, mos: 1.6, yoyAppr: 4.5, salesCount: 18 },
+      { zip: "60156", city: "Lake in the Hills", county: "McHenry", state: "IL", medianPrice: 340000, dom: 19, saleToList: 99.6, inventory: 24, mos: 1.2, yoyAppr: 5.5, salesCount: 20 },
+      { zip: "60050", city: "McHenry", county: "McHenry", state: "IL", medianPrice: 290000, dom: 31, saleToList: 98.5, inventory: 38, mos: 2.1, yoyAppr: 3.8, salesCount: 19 },
+      { zip: "60098", city: "Woodstock", county: "McHenry", state: "IL", medianPrice: 320000, dom: 33, saleToList: 98.3, inventory: 35, mos: 2.3, yoyAppr: 3.5, salesCount: 16 },
+      { zip: "60073", city: "Round Lake", county: "Lake", state: "IL", medianPrice: 245000, dom: 26, saleToList: 99.0, inventory: 22, mos: 1.5, yoyAppr: 5.1, salesCount: 15 },
+      { zip: "60046", city: "Lake Villa", county: "Lake", state: "IL", medianPrice: 305000, dom: 24, saleToList: 99.2, inventory: 26, mos: 1.4, yoyAppr: 4.9, salesCount: 18 },
+      { zip: "60030", city: "Grayslake", county: "Lake", state: "IL", medianPrice: 365000, dom: 29, saleToList: 98.7, inventory: 31, mos: 1.7, yoyAppr: 4.3, salesCount: 19 },
+      { zip: "60048", city: "Libertyville", county: "Lake", state: "IL", medianPrice: 525000, dom: 34, saleToList: 98.4, inventory: 36, mos: 2.0, yoyAppr: 3.9, salesCount: 18 },
+      { zip: "60035", city: "Highland Park", county: "Lake", state: "IL", medianPrice: 685000, dom: 42, saleToList: 97.2, inventory: 55, mos: 2.9, yoyAppr: 2.8, salesCount: 19 },
+      { zip: "60010", city: "Barrington", county: "Lake", state: "IL", medianPrice: 595000, dom: 39, saleToList: 97.6, inventory: 48, mos: 2.6, yoyAppr: 3.1, salesCount: 18 },
+      { zip: "60123", city: "Elgin", county: "Kane", state: "IL", medianPrice: 285000, dom: 27, saleToList: 99.1, inventory: 30, mos: 1.5, yoyAppr: 5.4, salesCount: 20 },
+      { zip: "60124", city: "Elgin", county: "Kane", state: "IL", medianPrice: 350000, dom: 24, saleToList: 99.3, inventory: 26, mos: 1.4, yoyAppr: 5.0, salesCount: 19 },
+      { zip: "60177", city: "South Elgin", county: "Kane", state: "IL", medianPrice: 365000, dom: 22, saleToList: 99.5, inventory: 24, mos: 1.3, yoyAppr: 5.3, salesCount: 18 },
+      { zip: "60110", city: "Carpentersville", county: "Kane", state: "IL", medianPrice: 275000, dom: 25, saleToList: 99.2, inventory: 22, mos: 1.4, yoyAppr: 5.6, salesCount: 16 },
+      { zip: "60506", city: "Aurora", county: "Kane", state: "IL", medianPrice: 245000, dom: 30, saleToList: 98.4, inventory: 36, mos: 2.0, yoyAppr: 4.1, salesCount: 18 },
+      { zip: "60505", city: "Aurora", county: "Kane", state: "IL", medianPrice: 230000, dom: 28, saleToList: 98.8, inventory: 32, mos: 1.8, yoyAppr: 4.7, salesCount: 18 }
+    ];
+
+    function loadDemoData() {
+      redfinData = new Map();
+      zhviData = new Map();
+      DEMO_ZIPS.forEach(z => {
+        redfinData.set(z.zip, {
+          zip: z.zip, city: z.city, county: z.county, state: z.state,
+          medianPrice: z.medianPrice, dom: z.dom, saleToList: z.saleToList,
+          inventory: z.inventory, mos: z.mos, salesCount: z.salesCount, period: "2026-05-01"
+        });
+        zhviData.set(z.zip, {
+          zip: z.zip, state: z.state, city: z.city, county: z.county,
+          zhviNow: z.medianPrice, zhviYearAgo: z.medianPrice / (1 + z.yoyAppr / 100), yoyAppr: z.yoyAppr
+        });
+      });
+      setStatus("redfin", `✓ ${redfinData.size} demo zip rows`, true);
+      setStatus("zhvi", `✓ ${zhviData.size} demo zip rows`, true);
+      afterLoad();
+    }
+
+    // ============================================================
+    // EVENTS
+    // ============================================================
+    setupDropZone("dropRedfin", "fileRedfin", "redfin", loadRedfin);
+    setupDropZone("dropZhvi", "fileZhvi", "zhvi", loadZhvi);
+    setupDropZone("dropInv", "fileInv", "inv", loadInv);
+
+    $("applyFilters").addEventListener("click", runAnalysis);
+    $("loadDemo").addEventListener("click", loadDemoData);
+
+    $("btnReset").addEventListener("click", () => {
+      if (!confirm("Reset everything? This clears loaded data and your starred zips.")) return;
+      redfinData = null; zhviData = null; invData = null;
+      merged = []; targetZips = new Set();
+      saveTargets();
+      ["redfin", "zhvi", "inv"].forEach(z => setStatus(z, "Drop CSV here, or click to pick", false));
+      $("filterCard").style.display = "none";
+      $("resultsCard").style.display = "none";
+      $("targetCard").style.display = "none";
+      $("emptyCard").style.display = "";
+      $("loadStatus").textContent = "No data loaded";
+      $("loadStatus").className = "chip";
+    });
+
+    $("copyTargets").addEventListener("click", () => {
+      const zips = [...targetZips].sort().join(", ");
+      navigator.clipboard.writeText(zips);
+      const btn = $("copyTargets");
+      const old = btn.textContent;
+      btn.textContent = "✓ Copied";
+      setTimeout(() => btn.textContent = old, 1500);
+    });
+
+    // Sort header clicks
+    document.querySelectorAll("th[data-sort]").forEach(th => {
+      th.addEventListener("click", () => {
+        const f = th.dataset.sort;
+        if (sortField === f) {
+          sortDir = sortDir === "asc" ? "desc" : "asc";
+        } else {
+          sortField = f;
+          // Default sort direction: descending for numeric, ascending for text
+          sortDir = ["zip", "city", "county"].includes(f) ? "asc" : "desc";
+        }
+        renderResults();
+      });
+    });
+
+    // Tier filter
+    document.querySelectorAll(".filterChip").forEach(c => {
+      c.addEventListener("click", () => {
+        document.querySelectorAll(".filterChip").forEach(x => x.classList.remove("active"));
+        c.classList.add("active");
+        tierFilter = c.dataset.tier;
+        renderResults();
+      });
+    });
+
+    // Theme toggle
+    function applyTheme(t) {
+      document.documentElement.setAttribute("data-theme", t);
+      try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+      $("btnTheme").textContent = t === "dark" ? "☀" : "◐";
+    }
+    $("btnTheme").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme") || "light";
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved) applyTheme(saved);
+      else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) applyTheme("dark");
+    } catch (e) {}
+
+    // Boot
+    loadTargets();
+    renderTargets();
+  </script>
+</body>
+</html>
