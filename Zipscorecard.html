@@ -623,26 +623,48 @@
       const delimiter = detectDelimiter(text);
       const rows = parseCSV(text, delimiter);
       if (!rows.length) throw new Error("Empty file");
-      const headers = rows[0].map(h => h.trim().toLowerCase());
+      // Normalize headers: lowercase, strip punctuation/units/parens/spaces
+      const normalize = s => (s || "").toString().toLowerCase()
+        .replace(/\([^)]*\)/g, "")          // remove (%) (days) ($) etc
+        .replace(/[^a-z0-9]/g, "");          // remove all non-alphanum
+      const headers = rows[0].map(h => normalize(h));
 
-      // Find column indices we care about
-      const colIdx = name => headers.findIndex(h => h === name || h.replace(/[^a-z0-9]/g, "") === name.replace(/[^a-z0-9]/g, ""));
-      const c_region = colIdx("region");
-      const c_regionType = colIdx("region_type");
-      const c_city = colIdx("city");
-      const c_county = headers.findIndex(h => h.includes("parent_metro_region") || h === "county");
-      const c_state = colIdx("state_code");
-      const c_medianPrice = colIdx("median_sale_price");
-      const c_dom = colIdx("median_dom") !== -1 ? colIdx("median_dom") : colIdx("median_days_on_market");
-      const c_saleToList = colIdx("avg_sale_to_list");
-      const c_inventory = colIdx("inventory");
-      const c_mos = colIdx("months_of_supply");
-      const c_salesCount = colIdx("homes_sold");
-      const c_period = colIdx("period_end");
-      const c_propType = colIdx("property_type");
+      // Find a column by trying multiple normalized aliases
+      const findCol = (...aliases) => {
+        for (const a of aliases) {
+          const norm = normalize(a);
+          const idx = headers.findIndex(h => h === norm);
+          if (idx !== -1) return idx;
+        }
+        // Try fuzzy contains-match as fallback
+        for (const a of aliases) {
+          const norm = normalize(a);
+          const idx = headers.findIndex(h => h.includes(norm) || norm.includes(h));
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+
+      // Map common Redfin columns (covers both old lowercase and new uppercase formats)
+      const c_region = findCol("region", "regionname");
+      const c_regionType = findCol("regiontype", "region_type");
+      const c_city = findCol("city");
+      const c_county = findCol("county", "parentmetroregion");
+      const c_state = findCol("statecode", "state");
+      const c_metro = findCol("metro", "parentmetroregion");
+      // Price column: new format has "MEDIAN SALE PRICE NSA ($)" — strip NSA/SA suffixes too
+      const c_medianPrice = findCol("mediansaleprice", "mediansalepricensa", "mediansalepricesa");
+      const c_dom = findCol("mediandaysonmarket", "mediandom");
+      // New format: "AVERAGE SALE TO LIST RATIO (%)" — older was "avg_sale_to_list"
+      const c_saleToList = findCol("averagesaletolistratio", "avgsaletolist", "avgsaletolistratio");
+      const c_inventory = findCol("activelistings", "inventory");
+      const c_mos = findCol("monthsofsupply");
+      const c_salesCount = findCol("homessold");
+      const c_period = findCol("periodend", "lastupdated");
+      const c_propType = findCol("propertytype");
 
       if (c_region === -1 || c_medianPrice === -1) {
-        throw new Error("This doesn't look like a Redfin Market Tracker file. Expected columns 'region' and 'median_sale_price'.");
+        throw new Error("This doesn't look like a Redfin Market Tracker file. Couldn't find a region/zip column or a median sale price column.");
       }
 
       // For each zip, keep only the most recent row (latest period_end)
@@ -659,9 +681,10 @@
         }
 
         // Filter: only "All Residential" or Single Family (skip condos, townhomes)
+        // The new download hub doesn't include a property_type column at all — that's fine, skip the filter
         if (c_propType !== -1) {
           const pt = (row[c_propType] || "").toLowerCase();
-          if (pt && !(pt.includes("all residential") || pt.includes("single family")) ) continue;
+          if (pt && !(pt.includes("all residential") || pt.includes("single family"))) continue;
         }
 
         const region = row[c_region] || "";
@@ -681,10 +704,19 @@
         const mos = c_mos !== -1 ? (parseFloat(row[c_mos]) || null) : null;
         const salesCount = c_salesCount !== -1 ? (parseFloat(row[c_salesCount]) || null) : null;
 
+        // For county detection: prefer county column, fall back to metro string
+        let countyVal = "";
+        if (c_county !== -1) countyVal = row[c_county] || "";
+        if (!countyVal && c_metro !== -1) countyVal = row[c_metro] || "";
+        countyVal = countyVal.replace(/,?\s*(IL|IA|IN|WI|MI|OH).*$/i, "")  // strip ", IL metro area"
+                             .replace(/\s+metro area$/i, "")
+                             .replace(/\s+county$/i, "")
+                             .trim();
+
         zipMap.set(zip, {
           zip,
           city: c_city !== -1 ? row[c_city] : "",
-          county: c_county !== -1 ? (row[c_county] || "").replace(/ Metro Area$/i, "").replace(/ County$/i, "") : "",
+          county: countyVal,
           state: c_state !== -1 ? row[c_state] : "",
           medianPrice, dom, saleToList, inventory, mos, salesCount,
           period
@@ -900,25 +932,109 @@
       const maxPrice = Number($("maxPrice").value) || Infinity;
       const targetMid = Number($("targetPriceMid").value) || ((minPrice + maxPrice) / 2);
 
+      // Hard-coded county lookups for common Chicago-area zips
+      // Used when Redfin's metro field is too vague ("Chicago metro") and Zillow ZHVI isn't loaded
+      const IL_ZIP_COUNTY = {
+        // McHenry County
+        "60012":"McHenry","60013":"McHenry","60014":"McHenry","60021":"McHenry",
+        "60033":"McHenry","60034":"McHenry","60039":"McHenry","60042":"McHenry",
+        "60050":"McHenry","60051":"McHenry","60071":"McHenry","60072":"McHenry",
+        "60081":"McHenry","60097":"McHenry","60098":"McHenry","60102":"McHenry",
+        "60142":"McHenry","60152":"McHenry","60156":"McHenry","60180":"McHenry",
+        // Kane County
+        "60110":"Kane","60118":"Kane","60119":"Kane","60120":"Kane","60121":"Kane",
+        "60122":"Kane","60123":"Kane","60124":"Kane","60134":"Kane","60136":"Kane",
+        "60144":"Kane","60147":"Kane","60151":"Kane","60174":"Kane","60175":"Kane",
+        "60177":"Kane","60183":"Kane","60185":"Kane","60506":"Kane","60505":"Kane",
+        "60510":"Kane","60511":"Kane","60519":"Kane","60539":"Kane","60542":"Kane",
+        "60554":"Kane",
+        // Lake County (most already labeled by Redfin but added for completeness)
+        "60002":"Lake","60010":"Lake","60011":"Lake","60015":"Lake","60020":"Lake",
+        "60030":"Lake","60031":"Lake","60035":"Lake","60037":"Lake","60040":"Lake",
+        "60041":"Lake","60044":"Lake","60045":"Lake","60046":"Lake","60047":"Lake",
+        "60048":"Lake","60060":"Lake","60061":"Lake","60064":"Lake","60069":"Lake",
+        "60073":"Lake","60079":"Lake","60083":"Lake","60084":"Lake","60085":"Lake",
+        "60087":"Lake","60088":"Lake","60089":"Lake","60096":"Lake","60099":"Lake",
+        // DuPage County (common adjacent flip area)
+        "60101":"DuPage","60103":"DuPage","60106":"DuPage","60108":"DuPage",
+        "60126":"DuPage","60137":"DuPage","60139":"DuPage","60148":"DuPage",
+        "60154":"DuPage","60157":"DuPage","60181":"DuPage","60187":"DuPage",
+        "60188":"DuPage","60189":"DuPage","60190":"DuPage","60191":"DuPage",
+        "60515":"DuPage","60516":"DuPage","60517":"DuPage","60521":"DuPage",
+        "60523":"DuPage","60525":"DuPage","60527":"DuPage","60532":"DuPage",
+        "60540":"DuPage","60555":"DuPage","60559":"DuPage","60561":"DuPage",
+        "60563":"DuPage","60564":"DuPage","60565":"DuPage","60585":"DuPage",
+        // Will County
+        "60401":"Will","60404":"Will","60410":"Will","60417":"Will","60421":"Will",
+        "60431":"Will","60432":"Will","60433":"Will","60435":"Will","60436":"Will",
+        "60441":"Will","60442":"Will","60446":"Will","60448":"Will","60449":"Will",
+        "60451":"Will","60468":"Will","60471":"Will","60481":"Will","60484":"Will",
+        "60490":"Will","60491":"Will","60543":"Will","60544":"Will","60586":"Will"
+      };
+
+      // ZIP code → state inference (rough, used when state column is missing)
+      // Source: USPS zip prefixes
+      const ZIP_TO_STATE = {
+        "0": (z) => { const p = +z.slice(0,2); return p>=10&&p<=27?"MA":p<=29?"RI":p<=49?"NH":p<=54?"VT":p<=89?"CT":"NJ"; },
+        "1": (z) => { const p = +z.slice(0,2); return p<=14?"NY":p<=19?"PA":p<=27?"DE":p<=27?"DC":"PA"; },
+        "2": (z) => { const p = +z.slice(0,2); return p<=22?"VA":p<=24?"WV":p<=26?"NC":p<=27?"NC":p<=29?"SC":"GA"; },
+        "3": (z) => { const p = +z.slice(0,2); return p<=34?"FL":p<=35?"AL":p<=36?"AL":p<=37?"TN":p<=38?"TN":p<=39?"MS":"GA"; },
+        "4": (z) => { const p = +z.slice(0,2); return p<=42?"KY":p<=45?"OH":p<=47?"IN":"MI"; },
+        "5": (z) => { const p = +z.slice(0,2); return p<=54?"WI":p<=56?"MN":p<=57?"SD":p<=58?"ND":"MT"; },
+        "6": (z) => { const p = +z.slice(0,2); return p<=62?"IL":p<=66?"KS":p<=68?"NE":"MO"; },
+        "7": (z) => { const p = +z.slice(0,2); return p<=72?"AR":p<=74?"OK":p<=75?"TX":p<=79?"TX":"NM"; },
+        "8": (z) => { const p = +z.slice(0,2); return p<=81?"CO":p<=83?"ID":p<=84?"UT":p<=86?"AZ":p<=88?"NV":"NM"; },
+        "9": (z) => { const p = +z.slice(0,2); return p<=96?"CA":p<=96?"HI":p<=97?"OR":p<=98?"WA":"AK"; }
+      };
+      const stateFromZip = (zip) => {
+        if (!zip || zip.length < 2) return "";
+        const fn = ZIP_TO_STATE[zip[0]];
+        return fn ? fn(zip) : "";
+      };
+
       // Merge data
       merged = [];
       redfinData.forEach((rf, zip) => {
-        // State filter
-        if (state !== "ALL" && rf.state && rf.state.toUpperCase() !== state) return;
+        // Get Zillow data first so we can fall back to it for filtering
+        const zhvi = zhviData ? zhviData.get(zip) : null;
+        const inv = invData ? invData.get(zip) : null;
 
-        // County filter
-        if (counties.length && rf.county) {
-          const cnty = rf.county.toLowerCase();
-          if (!counties.some(c => cnty.includes(c))) return;
+        // Best effort: use Zillow's state if Redfin's is blank, fall back to zip-prefix inference
+        const effectiveState = (rf.state || (zhvi && zhvi.state) || stateFromZip(zip) || "").toUpperCase();
+
+        // County resolution priority:
+        // 1. Hard-coded IL zip lookup (most reliable for Chicago metro)
+        // 2. Zillow's county field (covers other states)
+        // 3. Redfin's county/metro field (often just "Chicago metro" — unhelpful)
+        let effectiveCounty;
+        if (effectiveState === "IL" && IL_ZIP_COUNTY[zip]) {
+          effectiveCounty = IL_ZIP_COUNTY[zip];
+        } else {
+          const rfCountyLooksLikeMetro = rf.county && /^(chicago|new york|los angeles|dallas|houston|phoenix|philadelphia|miami|atlanta|boston|denver|detroit|seattle|minneapolis|tampa|salt lake|spokane|storm)/i.test(rf.county);
+          effectiveCounty = (!rf.county || rfCountyLooksLikeMetro) && zhvi && zhvi.county
+            ? zhvi.county
+            : rf.county;
+        }
+        const effectiveCity = rf.city || (zhvi && zhvi.city) || "";
+
+        // State filter — now always applied (we can infer from zip)
+        if (state !== "ALL" && effectiveState && effectiveState !== state) return;
+
+        // County filter — use word-boundary matching to avoid "Lake" matching "Salt Lake"
+        if (counties.length) {
+          if (!effectiveCounty) return; // can't match without county info
+          const cnty = effectiveCounty.toLowerCase();
+          const matched = counties.some(c => {
+            // Match as whole word (bounded by start/end or non-letter)
+            const re = new RegExp("(^|[^a-z])" + c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z]|$)", "i");
+            return re.test(cnty);
+          });
+          if (!matched) return;
         }
 
         // Price band — only filter on hard price floor, don't reject for being above max
         if (rf.medianPrice && rf.medianPrice < minPrice * 0.5) return;
         if (rf.medianPrice && rf.medianPrice > maxPrice * 1.5) return;
-
-        // Get Zillow data
-        const zhvi = zhviData ? zhviData.get(zip) : null;
-        const inv = invData ? invData.get(zip) : null;
 
         // Compute months-of-supply if not provided
         let mos = rf.mos;
@@ -928,9 +1044,9 @@
 
         merged.push({
           zip,
-          city: rf.city || (zhvi && zhvi.city) || "",
-          county: rf.county || (zhvi && zhvi.county) || "",
-          state: rf.state,
+          city: effectiveCity,
+          county: effectiveCounty || "",
+          state: effectiveState,
           medianPrice: rf.medianPrice,
           dom: rf.dom,
           saleToList: rf.saleToList,
