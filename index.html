@@ -939,6 +939,181 @@
       color: var(--brand-700);
     }
 
+    /* ============================================================
+       FORECLOSURE RESOURCES PANEL
+       ============================================================ */
+    .resTabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--ink-100);
+      margin-bottom: var(--s4);
+      flex-wrap: wrap;
+    }
+    .resTab {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-600);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color var(--t1), border-color var(--t1);
+      font-family: var(--font-ui);
+      white-space: nowrap;
+    }
+    .resTab:hover { color: var(--brand-700); }
+    .resTab.active {
+      color: var(--brand-700);
+      border-bottom-color: var(--brand-700);
+      font-weight: 600;
+    }
+    .resSection { display: none; }
+    .resSection.active { display: block; }
+
+    .resGroup {
+      margin-bottom: var(--s5);
+    }
+    .resGroup:last-child { margin-bottom: 0; }
+    .resGroup h4 {
+      margin: 0 0 var(--s2);
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-900);
+      letter-spacing: -0.01em;
+    }
+    .resGroup .when {
+      margin: 0 0 var(--s3);
+      padding: 6px 10px;
+      background: var(--brand-50);
+      border-left: 3px solid var(--brand-700);
+      font-size: 11.5px;
+      color: var(--brand-700);
+      line-height: 1.5;
+      border-radius: 0 var(--r1) var(--r1) 0;
+    }
+    [data-theme="dark"] .resGroup .when {
+      background: var(--brand-100);
+    }
+
+    .resLink {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--s3);
+      padding: var(--s3);
+      border: var(--border);
+      border-radius: var(--r2);
+      background: var(--white);
+      margin-bottom: var(--s2);
+      text-decoration: none;
+      color: var(--ink-900);
+      transition: border-color var(--t1), background var(--t1);
+    }
+    .resLink:hover {
+      border-color: var(--brand-500);
+      background: var(--brand-50);
+    }
+    [data-theme="dark"] .resLink:hover {
+      background: var(--brand-100);
+    }
+    .resLink .icon {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      background: var(--ink-100);
+      border-radius: var(--r2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-700);
+    }
+    .resLink:hover .icon {
+      background: var(--brand-100);
+      color: var(--brand-700);
+    }
+    .resLink .body { flex: 1; min-width: 0; }
+    .resLink .title {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--ink-900);
+      margin: 0 0 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .resLink .url {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ink-500);
+      margin: 0 0 4px;
+      word-break: break-all;
+      line-height: 1.3;
+    }
+    .resLink .desc {
+      font-size: 11.5px;
+      color: var(--ink-600);
+      line-height: 1.45;
+      margin: 0;
+    }
+    .resLink .arrow {
+      flex-shrink: 0;
+      color: var(--ink-400);
+      font-size: 14px;
+      align-self: center;
+    }
+    .resLink:hover .arrow { color: var(--brand-700); }
+
+    .resBadge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: var(--r1);
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .resBadge.login {
+      background: var(--gold-100);
+      color: var(--gold-700);
+    }
+    .resBadge.free {
+      background: var(--signal-pos-bg);
+      color: var(--signal-pos);
+    }
+    .resBadge.pdf {
+      background: var(--signal-neg-bg);
+      color: var(--signal-neg);
+    }
+
+    .resWorkflow {
+      background: var(--ink-50);
+      border: var(--border);
+      border-radius: var(--r2);
+      padding: var(--s3) var(--s4);
+      margin-bottom: var(--s4);
+    }
+    .resWorkflow h5 {
+      margin: 0 0 var(--s2);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-700);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .resWorkflow ol {
+      margin: 0;
+      padding-left: 22px;
+      font-size: 12px;
+      color: var(--ink-700);
+      line-height: 1.6;
+    }
+    .resWorkflow ol li { margin-bottom: 4px; }
+    .resWorkflow ol li b { color: var(--ink-900); }
+
   </style>
 </head>
 </head>
@@ -958,6 +1133,7 @@
         <button class="btn secondary" id="btnReset" type="button" title="Clear all fields and start fresh. Library is not affected.">Reset</button>
         <button class="btn secondary" id="btnQuickSave" type="button" title="Save the current property to your Library with a name. You can reload and edit it later from the Library.">Save</button>
         <button class="btn secondary" id="btnLibrary" type="button" title="Open your library of saved properties. Click 'Load & Edit' on any to bring it back into the calculator.">Library</button>
+        <button class="btn secondary" id="btnResources" type="button" title="Open the Foreclosure Resources panel: auction platform logins, county sheriff sale schedules, and circuit clerk case searches.">Foreclosures</button>
         <button class="btn warn" id="btnStress" type="button" title="Run sensitivity tests: what happens to profit if ARV drops or rehab overruns? Shows breaking points before you offer.">Stress Test</button>
         <button class="btn primary" id="btnPdf" type="button" title="Generate a professional PDF report with all inputs, comps, and verdict. Downloads to your device.">Export PDF</button>
       </div>
@@ -1570,6 +1746,391 @@
           </table>
         </div>
         <div class="note warn" id="stressNote" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Foreclosure Resources Modal -->
+  <div class="modalBack" id="resourcesModal">
+    <div class="modal" style="max-width:820px">
+      <div class="hd">
+        <div>
+          <h2>Foreclosure Resources</h2>
+          <p class="sub" style="margin:3px 0 0;font-size:12px;color:var(--ink-500)">Auction platforms · County sheriff sales · Circuit clerk case searches</p>
+        </div>
+        <button class="miniBtn" onclick="closeModal('resourcesModal')">Close</button>
+      </div>
+      <div class="bd">
+
+        <div class="resTabs">
+          <button class="resTab active" data-section="workflow">Workflow</button>
+          <button class="resTab" data-section="platforms">Auction Platforms</button>
+          <button class="resTab" data-section="sheriff">Sheriff Sales</button>
+          <button class="resTab" data-section="clerk">Circuit Clerk</button>
+          <button class="resTab" data-section="aggregators">Aggregators</button>
+        </div>
+
+        <!-- WORKFLOW TAB -->
+        <div class="resSection active" data-section="workflow">
+          <div class="resWorkflow">
+            <h5>Weekly Routine (5 min, every Thursday morning)</h5>
+            <ol>
+              <li>Open the <b>McHenry</b> sheriff foreclosure PDF — Thursday sale list</li>
+              <li>Open the <b>Lake</b> County Judicial Sales calendar</li>
+              <li>Open the <b>Kane</b> County sheriff foreclosure PDF</li>
+              <li>Quick scan for properties in your target zips (Crystal Lake, Cary, Lake in the Hills, Algonquin, etc.)</li>
+              <li>Note any addresses worth research — <b>observe, don't bid yet</b></li>
+            </ol>
+          </div>
+
+          <div class="resWorkflow">
+            <h5>Monthly Deep-Dive (15-20 min)</h5>
+            <ol>
+              <li>Open each county's Circuit Clerk case search</li>
+              <li>Search <b>Chancery / Foreclosure cases</b> filed in the last 30 days</li>
+              <li>Pull case files for properties in your target zips</li>
+              <li>Drive by the most promising 2-3 properties</li>
+              <li>Run ARV in this calculator on the ones worth pursuing</li>
+            </ol>
+          </div>
+
+          <div class="note warn">
+            <b>Year-1 caution:</b> Don't bid at sheriff's sale your first year. Attend as an observer. Sheriff sales are cash-only, no interior inspection, may include occupied property with eviction needed. Start with Hubzu/Xome/HUD REO instead — those let you inspect and finance normally.
+          </div>
+
+          <div class="note">
+            <b>The high-quality channel everyone misses:</b> The Circuit Clerk pre-foreclosure case search shows properties 6–18 months <i>before</i> they go to auction. That's when the homeowner still has title and you can approach with a direct cash offer. Send 1 professional letter via USPS — never aggressive, never urgent. Follow up once at 60 days, then never again. Low response rate but high-quality leads.
+          </div>
+        </div>
+
+        <!-- AUCTION PLATFORMS TAB -->
+        <div class="resSection" data-section="platforms">
+          <div class="resGroup">
+            <h4>REO / Auction Platforms You're On</h4>
+            <div class="when">
+              <b>When to use:</b> Daily passive monitoring. These send email alerts. Bank-owned REOs — you can inspect first, finance normally, close like a regular transaction. Lower risk than courthouse-step sheriff sales.
+            </div>
+
+            <a class="resLink" href="https://www.hudhomestore.gov/" target="_blank" rel="noopener">
+              <div class="icon">HUD</div>
+              <div class="body">
+                <p class="title">HUD Home Store <span class="resBadge login">Login</span></p>
+                <p class="url">hudhomestore.gov</p>
+                <p class="desc">FHA-insured foreclosures. <b>Owner-occupant priority window first 15-30 days</b> — investors locked out during that window. As a licensed IL agent, look into becoming a HUD-registered broker to submit your own offers and keep the 3% commission.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+
+            <a class="resLink" href="https://www.hubzu.com/" target="_blank" rel="noopener">
+              <div class="icon">HZ</div>
+              <div class="body">
+                <p class="title">Hubzu <span class="resBadge login">Login</span></p>
+                <p class="url">hubzu.com</p>
+                <p class="desc">REO from Ocwen and other servicers. Auction-style with reserves; banks often counter even after you "win." <b>Watch for 5% buyer's premium</b> on top of your bid — always model into MAO.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+
+            <a class="resLink" href="https://www.xome.com/" target="_blank" rel="noopener">
+              <div class="icon">XM</div>
+              <div class="body">
+                <p class="title">Xome <span class="resBadge login">Login</span></p>
+                <p class="url">xome.com</p>
+                <p class="desc">Mr. Cooper's REO disposition platform. Different inventory than Hubzu — worth checking weekly. Similar fee structure to Hubzu.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+
+          <div class="resGroup">
+            <h4>Platforms To Add (Free Accounts Worth Creating)</h4>
+            <div class="when">
+              <b>When to use:</b> Each surfaces inventory the others miss. ~10 min per signup. Filter alerts to McHenry/Lake/Kane/Winnebago, SFR, $75k–$500k.
+            </div>
+
+            <a class="resLink" href="https://www.auction.com/" target="_blank" rel="noopener">
+              <div class="icon">AC</div>
+              <div class="body">
+                <p class="title">Auction.com <span class="resBadge login">Login</span></p>
+                <p class="url">auction.com</p>
+                <p class="desc">Biggest online auction platform. <b>Only set alerts for REO listings</b> — uncheck "Trustee Sale" and "Foreclosure" categories. Trustee sales are courthouse-step cash auctions with no inspection — too risky for year 1.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+
+            <a class="resLink" href="https://www.homepath.com/" target="_blank" rel="noopener">
+              <div class="icon">FNM</div>
+              <div class="body">
+                <p class="title">Fannie Mae HomePath <span class="resBadge login">Login</span></p>
+                <p class="url">homepath.com</p>
+                <p class="desc">Fannie Mae's REO disposition. Larger pool than HUD. Owner-occupant priority window applies. Free signup.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+
+            <a class="resLink" href="https://www.homesteps.com/" target="_blank" rel="noopener">
+              <div class="icon">FRE</div>
+              <div class="body">
+                <p class="title">Freddie Mac HomeSteps <span class="resBadge login">Login</span></p>
+                <p class="url">homesteps.com</p>
+                <p class="desc">Freddie Mac's REO inventory. Less volume than HomePath but worth a free account.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- SHERIFF SALES TAB -->
+        <div class="resSection" data-section="sheriff">
+          <div class="note">
+            <b>What these are:</b> Week-of-sale lists for upcoming foreclosure auctions, typically 30 days out. Courthouse-step bidding: cash deposit required, no interior inspection, properties subject to occupancy and liens. <b>High-risk channel — observe before bidding.</b>
+          </div>
+
+          <div class="resGroup">
+            <h4>McHenry County</h4>
+            <div class="when">
+              <b>Sale day:</b> Thursdays 10:00 AM at Government Center, 2200 N. Seminary Ave, Woodstock, Room 262 · Phone: 815-334-4720 · 10% certified funds at registration
+            </div>
+            <a class="resLink" href="https://www.mchenrysheriff.org/wp-content/uploads/pdf-uploads/ForeclosureList.pdf" target="_blank" rel="noopener">
+              <div class="icon">PDF</div>
+              <div class="body">
+                <p class="title">McHenry Sheriff Foreclosure List <span class="resBadge free">Free</span> <span class="resBadge pdf">PDF</span></p>
+                <p class="url">mchenrysheriff.org/.../ForeclosureList.pdf</p>
+                <p class="desc">Current week's upcoming auctions. PDF updated weekly — bookmark and refresh each Thursday morning.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+
+          <div class="resGroup">
+            <h4>Lake County</h4>
+            <div class="when">
+              <b>Sale day:</b> Tuesdays 9:30 AM at Lake County Courthouse, 301 Washington St, Waukegan · Phone: 847-377-4401 · Cashier's check only; balance due 48 hours after sale · Handled by dedicated Judicial Sales Team, NOT the sheriff directly
+            </div>
+            <a class="resLink" href="https://www.lakecountyil.gov/2016/Foreclosure-Information" target="_blank" rel="noopener">
+              <div class="icon">LK</div>
+              <div class="body">
+                <p class="title">Lake County Foreclosure Information <span class="resBadge free">Free</span></p>
+                <p class="url">lakecountyil.gov/2016/Foreclosure-Information</p>
+                <p class="desc">Main hub: sales calendar, posted results from last sale, bidding process explained, requirements for plaintiff attorneys.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://www.lakecountyil.gov/3319/Judicial-Sales-Team" target="_blank" rel="noopener">
+              <div class="icon">LK</div>
+              <div class="body">
+                <p class="title">Lake County Judicial Sales Team <span class="resBadge free">Free</span></p>
+                <p class="url">lakecountyil.gov/3319/Judicial-Sales-Team</p>
+                <p class="desc">Contact page for the Judicial Sales Division. Use this to call about a specific case (847-377-4401) or review research-before-bidding warnings.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://www.lakecountyil.gov/2025/Third-Party-Bidder" target="_blank" rel="noopener">
+              <div class="icon">LK</div>
+              <div class="body">
+                <p class="title">Lake County Third Party Bidder Info <span class="resBadge free">Free</span></p>
+                <p class="url">lakecountyil.gov/2025/Third-Party-Bidder</p>
+                <p class="desc">Read this <b>before</b> attending your first Lake County sale. Explains the registration process, deposit requirements, and bidder rules.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+
+          <div class="resGroup">
+            <h4>Kane County</h4>
+            <div class="when">
+              <b>Sale day:</b> Kane County Sheriff's Office, 37W755 IL Rt 38, St. Charles · Registration 8:45–9:00 AM · 10% certified funds · Phone: 630-232-6840
+            </div>
+            <a class="resLink" href="https://www.kanesheriff.com/" target="_blank" rel="noopener">
+              <div class="icon">KN</div>
+              <div class="body">
+                <p class="title">Kane County Sheriff <span class="resBadge free">Free</span></p>
+                <p class="url">kanesheriff.com</p>
+                <p class="desc">Main sheriff page. Look for "Foreclosures" link in navigation for current sale schedule.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://applications.kanecountyil.gov/foreclosures/foreclosuressold.pdf" target="_blank" rel="noopener">
+              <div class="icon">PDF</div>
+              <div class="body">
+                <p class="title">Kane County Foreclosures Sold (last 90 days) <span class="resBadge free">Free</span> <span class="resBadge pdf">PDF</span></p>
+                <p class="url">applications.kanecountyil.gov/.../foreclosuressold.pdf</p>
+                <p class="desc">Recent sale results: judgment amount vs sold amount across last 90 days. Use to gauge what's actually trading at courthouse steps.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://www.kanesheriff.com/Documents/Foreclosures/ForeclosureSalesRules.pdf" target="_blank" rel="noopener">
+              <div class="icon">PDF</div>
+              <div class="body">
+                <p class="title">Kane County Foreclosure Sales Rules <span class="resBadge free">Free</span> <span class="resBadge pdf">PDF</span></p>
+                <p class="url">kanesheriff.com/.../ForeclosureSalesRules.pdf</p>
+                <p class="desc">Official bidder rules. Read once before attending any Kane sale.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- CIRCUIT CLERK TAB -->
+        <div class="resSection" data-section="clerk">
+          <div class="note">
+            <b>What these are:</b> Pre-foreclosure case lookups — properties where lender has filed suit but auction hasn't happened yet. Search "Chancery" or "FC" (Foreclosure) case types. <b>This is the highest-quality off-market lead source</b> — homeowner still has title and can be approached directly.
+          </div>
+
+          <div class="resGroup">
+            <h4>McHenry County Circuit Clerk</h4>
+            <div class="when">
+              <b>How to search:</b> Case Type = CH (Chancery) → look for "Mortgage Foreclosure" subcategory. Filter by file date for newly filed cases.
+            </div>
+            <a class="resLink" href="https://caseinfo.mchenrycountyil.gov/PublicCaseAccess" target="_blank" rel="noopener">
+              <div class="icon">MC</div>
+              <div class="body">
+                <p class="title">Public Case Access Portal <span class="resBadge free">Free</span></p>
+                <p class="url">caseinfo.mchenrycountyil.gov/PublicCaseAccess</p>
+                <p class="desc">Public records portal for 22nd Judicial Circuit. No login required — session cookies only. Document images available for cases filed after 2016.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://caseinfo.mchenrycountyil.gov/PublicCaseAccess/CaseSearch" target="_blank" rel="noopener">
+              <div class="icon">MC</div>
+              <div class="body">
+                <p class="title">McHenry Case Search (direct) <span class="resBadge free">Free</span></p>
+                <p class="url">caseinfo.mchenrycountyil.gov/PublicCaseAccess/CaseSearch</p>
+                <p class="desc">Direct link to the search form. Bookmark this for quickest access.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://www.mchenrycircuitclerk.org/civil-information/chancery/" target="_blank" rel="noopener">
+              <div class="icon">MC</div>
+              <div class="body">
+                <p class="title">McHenry Chancery Info <span class="resBadge free">Free</span></p>
+                <p class="url">mchenrycircuitclerk.org/civil-information/chancery</p>
+                <p class="desc">Explains what Chancery (CH) cases are — foreclosures, trusts, title disputes. Useful background reading.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+
+          <div class="resGroup">
+            <h4>Lake County Circuit Clerk</h4>
+            <div class="when">
+              <b>How to search:</b> 19th Judicial Circuit uses LACSnet. Search Mortgage Foreclosure case type. Phone the Circuit Clerk's Office at 847-377-3380 if site is down.
+            </div>
+            <a class="resLink" href="https://www.lakecountyil.gov/2849/Foreclosure-Info" target="_blank" rel="noopener">
+              <div class="icon">LK</div>
+              <div class="body">
+                <p class="title">Lake County Foreclosure Info Hub <span class="resBadge free">Free</span></p>
+                <p class="url">lakecountyil.gov/2849/Foreclosure-Info</p>
+                <p class="desc">Starting point for Lake County records. Links to County Clerk for deeds/mortgages and to Judicial Sales for upcoming auctions.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://www.lakecountyil.gov/2028/Sale-Location-Research-Tips-and-Bidding-" target="_blank" rel="noopener">
+              <div class="icon">LK</div>
+              <div class="body">
+                <p class="title">Lake County Research Tips Page <span class="resBadge free">Free</span></p>
+                <p class="url">lakecountyil.gov/2028/Sale-Location-Research-Tips...</p>
+                <p class="desc">Official "research before you bid" guidance from the county. Lists what to check in the court file before considering a property.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+
+          <div class="resGroup">
+            <h4>Kane County Circuit Clerk</h4>
+            <div class="when">
+              <b>How to search:</b> Kane uses "FC" (Foreclosure) case type format like <code>2025 FC 000414</code>. Search by case number or property address.
+            </div>
+            <a class="resLink" href="https://www.kanecountyil.gov/Pages/circuitClerk.aspx" target="_blank" rel="noopener">
+              <div class="icon">KN</div>
+              <div class="body">
+                <p class="title">Kane County Circuit Clerk <span class="resBadge free">Free</span></p>
+                <p class="url">kanecountyil.gov/Pages/circuitClerk.aspx</p>
+                <p class="desc">Circuit Clerk main page. Look for "Court Case Lookup" or "Public Case Access" in the navigation.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://marketplace.dailyherald.com/il/judicial-sales/search" target="_blank" rel="noopener">
+              <div class="icon">DH</div>
+              <div class="body">
+                <p class="title">Daily Herald Judicial Sales Notices <span class="resBadge free">Free</span></p>
+                <p class="url">marketplace.dailyherald.com/il/judicial-sales/search</p>
+                <p class="desc">Required legal notices for IL foreclosure sales published in Daily Herald. Searchable database with case numbers, addresses, and sale dates. Covers Kane and surrounding counties.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- AGGREGATORS TAB -->
+        <div class="resSection" data-section="aggregators">
+          <div class="resGroup">
+            <h4>Multi-County Aggregators</h4>
+            <div class="when">
+              <b>When to use:</b> One-stop view if you don't want to check 3 county sites separately. Same-day list is free; subscriber-only access for earlier listings (paid).
+            </div>
+
+            <a class="resLink" href="https://ilfls.com/free-daily-auction-lists/mchenry" target="_blank" rel="noopener">
+              <div class="icon">IL</div>
+              <div class="body">
+                <p class="title">ILFLS — McHenry County Daily List <span class="resBadge free">Free</span></p>
+                <p class="url">ilfls.com/free-daily-auction-lists/mchenry</p>
+                <p class="desc">Same-day auction list for McHenry. Free, no signup. Aggregates the same data as the official PDFs but in one cleaner view.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://ilfls.com/free-daily-auction-lists/lake" target="_blank" rel="noopener">
+              <div class="icon">IL</div>
+              <div class="body">
+                <p class="title">ILFLS — Lake County Daily List <span class="resBadge free">Free</span></p>
+                <p class="url">ilfls.com/free-daily-auction-lists/lake</p>
+                <p class="desc">Same-day auction list for Lake. Free, no signup.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+            <a class="resLink" href="https://ilfls.com/free-daily-auction-lists/kane" target="_blank" rel="noopener">
+              <div class="icon">IL</div>
+              <div class="body">
+                <p class="title">ILFLS — Kane County Daily List <span class="resBadge free">Free</span></p>
+                <p class="url">ilfls.com/free-daily-auction-lists/kane</p>
+                <p class="desc">Same-day auction list for Kane. Free, no signup.</p>
+              </div>
+              <span class="arrow">↗</span>
+            </a>
+          </div>
+
+          <div class="resGroup">
+            <h4>Private Auctioneer Companies (Recognize These Names)</h4>
+            <div class="when">
+              <b>When relevant:</b> When you see a foreclosure notice with one of these listed as the "selling officer," it's a private sale (not a sheriff sale) — slightly different rules. No website to bookmark; just know what they are.
+            </div>
+            <div class="resLink" style="cursor:default">
+              <div class="icon">JS</div>
+              <div class="body">
+                <p class="title">Judicial Sales Corporation</p>
+                <p class="url">312-236-7253</p>
+                <p class="desc">Handles many Cook County and surrounding collar county sales. Founded 2003.</p>
+              </div>
+            </div>
+            <div class="resLink" style="cursor:default">
+              <div class="icon">IC</div>
+              <div class="body">
+                <p class="title">Intercounty Sales Corporation</p>
+                <p class="url">312-444-1122</p>
+                <p class="desc">Handles many DuPage and Kane County sales. Private sale rules — typically 10–25% deposit, 100% within 24 hours.</p>
+              </div>
+            </div>
+            <div class="resLink" style="cursor:default">
+              <div class="icon">LS</div>
+              <div class="body">
+                <p class="title">Lender Sales of Illinois LLC</p>
+                <p class="url">Founded 2002 · Cook County focus</p>
+                <p class="desc">Private auctioneer for foreclosure sales. Cashier's check required at auction.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -3258,6 +3819,25 @@
 
     // Library
     $("btnLibrary").addEventListener("click", ()=>{ renderLibrary(); openModal("libModal"); });
+
+    // Foreclosure Resources modal
+    $("btnResources").addEventListener("click", ()=>{
+      openModal("resourcesModal");
+    });
+
+    // Resource tabs
+    document.querySelectorAll(".resTab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        const targetSection = tab.dataset.section;
+        // Update tab buttons
+        document.querySelectorAll(".resTab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        // Update visible section
+        document.querySelectorAll(".resSection").forEach(s => {
+          s.classList.toggle("active", s.dataset.section === targetSection);
+        });
+      });
+    });
     $("libSaveNew").addEventListener("click", ()=>{ saveLocal(); renderLibrary(); });
     $("libExportAll").addEventListener("click", exportAllLibrary);
     $("libImport").addEventListener("click", ()=> $("libImportFile").click());
