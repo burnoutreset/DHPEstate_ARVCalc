@@ -1223,6 +1223,45 @@
     .contactCard .cc-meta { font-size: 11px; color: var(--ink-500); margin-top: var(--s2); }
     .contactCard .cc-log-snippet { font-size: 11px; color: var(--ink-600); margin-top: 4px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .contactCard .cc-actions { display: flex; gap: 6px; margin-top: var(--s3); }
+    .contactCard .cc-hd { cursor: pointer; }
+    .contactCard .cc-hd:hover { background: var(--brand-50); }
+    [data-theme="dark"] .contactCard .cc-hd:hover { background: var(--brand-100); }
+
+    /* Contact Detail Modal */
+    .cd-section { margin-bottom: var(--s4); }
+    .cd-section:last-child { margin-bottom: 0; }
+    .cd-label {
+      font-size: 10px; font-weight: 600; color: var(--ink-500);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;
+    }
+    .cd-field {
+      display: flex; align-items: center; gap: var(--s2);
+      padding: 8px 10px;
+      background: var(--ink-50); border: var(--border); border-radius: var(--r2);
+      font-size: 13px; color: var(--ink-900);
+      margin-bottom: 6px;
+    }
+    .cd-field .cd-val { flex: 1; word-break: break-all; }
+    .cd-field a { color: var(--brand-600); text-decoration: none; }
+    .cd-field a:hover { text-decoration: underline; }
+    .cd-copy {
+      flex-shrink: 0;
+      font-size: 11px; font-weight: 500;
+      padding: 3px 8px; border-radius: var(--r1);
+      border: 1px solid var(--ink-200); background: var(--white);
+      color: var(--ink-500); cursor: pointer;
+      transition: background var(--t1), color var(--t1), border-color var(--t1);
+    }
+    .cd-copy:hover { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-700); }
+    .cd-copy.copied { background: var(--signal-pos-bg); border-color: var(--signal-pos); color: var(--signal-pos); }
+    .cd-chips-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: var(--s2); }
+    .cd-log-entry {
+      padding: var(--s2) var(--s3); border-bottom: var(--border);
+      font-size: 12px; color: var(--ink-700);
+    }
+    .cd-log-entry:last-child { border-bottom: none; }
+    .cd-log-date { font-size: 10px; color: var(--ink-400); margin-bottom: 2px; font-weight: 500; }
+    .cd-log-text { line-height: 1.5; }
 
     /* Contact modal - override existing modal max-width */
     #contactModal .modal { max-width: 680px; }
@@ -2111,6 +2150,23 @@
           <button class="btn primary" id="btnSaveContact" type="button">Save Contact</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Contact Detail Modal -->
+  <div class="modalBack" id="contactDetailModal">
+    <div class="modal" style="max-width:540px">
+      <div class="hd">
+        <div>
+          <h2 id="cdName" style="font-family:var(--font-serif)">Contact</h2>
+          <p class="sub" id="cdCompany" style="margin:3px 0 0;font-size:12px;color:var(--ink-500)"></p>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="miniBtn accent" id="cdEditBtn" type="button">Edit</button>
+          <button class="miniBtn" onclick="closeModal('contactDetailModal')">Close</button>
+        </div>
+      </div>
+      <div class="bd" id="cdBody"></div>
     </div>
   </div>
 
@@ -4736,13 +4792,14 @@
         const lastLog = (c.log || [])[0];
         const lastDate = lastLog ? lastLog.date : null;
         return `<div class="contactCard">
-          <div class="cc-hd">
+          <div class="cc-hd" onclick="openContactDetail('${esc(c.id)}')" title="Click to view full details">
             <div>
               <p class="cc-name">${esc(c.name || "—")}</p>
               ${c.company ? `<p class="cc-company">${esc(c.company)}</p>` : ""}
             </div>
             <div style="text-align:right">
               <div class="cc-stars">${renderStars(c.stars || 0)}</div>
+              <div style="font-size:10px;color:var(--ink-400);margin-top:3px">tap to view ↗</div>
             </div>
           </div>
           <div class="cc-bd">
@@ -4866,6 +4923,111 @@
       renderContactGrid();
     }
     window.deleteContact = deleteContact;
+
+    function openContactDetail(id) {
+      const contacts = loadContacts();
+      const c = contacts.find(x => x.id === id);
+      if (!c) return;
+
+      document.getElementById("cdName").textContent = c.name || "—";
+      document.getElementById("cdCompany").textContent = c.company || "";
+      document.getElementById("cdEditBtn").onclick = () => {
+        closeModal("contactDetailModal");
+        openEditContact(id);
+      };
+
+      const copyBtn = (text) =>
+        `<button class="cd-copy" onclick="copyText(this,'${esc(text)}')" type="button">Copy</button>`;
+
+      let html = "";
+
+      // Contact info fields
+      const fields = [
+        c.phone   && { label: "Phone",   val: c.phone,   link: `tel:${c.phone}` },
+        c.email   && { label: "Email",   val: c.email,   link: `mailto:${c.email}` },
+        c.website && { label: "Website", val: c.website, link: c.website },
+      ].filter(Boolean);
+
+      if (fields.length) {
+        html += `<div class="cd-section">`;
+        fields.forEach(f => {
+          html += `<div class="cd-label">${esc(f.label)}</div>
+            <div class="cd-field">
+              <span class="cd-val"><a href="${esc(f.link)}" target="_blank" rel="noopener">${esc(f.val)}</a></span>
+              ${copyBtn(f.val)}
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Roles & counties
+      const roleChips = (c.roles || []).map(r => {
+        const def = ROLE_DEFS.find(d => d.label === r);
+        const cls = def ? roleChipClass(def.color) : "rchip rchip-blue";
+        return `<span class="${cls}">${esc(r)}</span>`;
+      }).join("");
+      const countyChips = (c.counties || []).map(co => `<span class="rchip rchip-blue">${esc(co)}</span>`).join("");
+      if (roleChips || countyChips) {
+        html += `<div class="cd-section">
+          ${roleChips ? `<div class="cd-label">Roles</div><div class="cd-chips-row">${roleChips}</div>` : ""}
+          ${countyChips ? `<div class="cd-label" style="margin-top:6px">County Coverage</div><div class="cd-chips-row">${countyChips}</div>` : ""}
+        </div>`;
+      }
+
+      // Star rating
+      html += `<div class="cd-section">
+        <div class="cd-label">Rating</div>
+        <div style="font-size:20px;color:var(--gold-500);letter-spacing:2px">${renderStars(c.stars || 0)}</div>
+      </div>`;
+
+      // Notes
+      if (c.notes) {
+        html += `<div class="cd-section">
+          <div class="cd-label">Notes</div>
+          <div class="cd-field" style="align-items:flex-start">
+            <span class="cd-val" style="white-space:pre-wrap;word-break:break-word">${esc(c.notes)}</span>
+            ${copyBtn(c.notes)}
+          </div>
+        </div>`;
+      }
+
+      // Conversation log
+      const log = c.log || [];
+      if (log.length) {
+        html += `<div class="cd-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="cd-label" style="margin-bottom:0">Conversation Log (${log.length})</div>
+            <button class="miniBtn" onclick="closeModal('contactDetailModal');openLogModal('${esc(id)}')" type="button" style="font-size:10px;padding:3px 8px">+ Add Entry</button>
+          </div>
+          <div style="border:var(--border);border-radius:var(--r2);background:var(--white);max-height:220px;overflow-y:auto">
+            ${log.map(e => `<div class="cd-log-entry">
+              <div class="cd-log-date">${esc(e.date)}</div>
+              <div class="cd-log-text">${esc(e.text)}</div>
+            </div>`).join("")}
+          </div>
+        </div>`;
+      }
+
+      document.getElementById("cdBody").innerHTML = html;
+      openModal("contactDetailModal");
+    }
+    window.openContactDetail = openContactDetail;
+
+    function copyText(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1500);
+      }).catch(() => {
+        // Fallback for non-HTTPS
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); btn.textContent = "Copied!"; btn.classList.add("copied"); setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1500); } catch(e){}
+        document.body.removeChild(ta);
+      });
+    }
+    window.copyText = copyText;
 
     function openLogModal(id) {
       const contacts = loadContacts();
