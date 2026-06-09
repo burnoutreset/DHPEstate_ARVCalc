@@ -4359,13 +4359,14 @@
           const wb = XLSX.read(buf, { type: 'array' });
 
           // Parse ZIP_to_County → zipMap
+          // Sheets have 3 title/desc rows; actual headers are on row 4 (range: 3 = 0-indexed)
           const zipMap = {};
           const zipSheet = wb.Sheets["ZIP_to_County"];
           if (zipSheet) {
-            const rows = XLSX.utils.sheet_to_json(zipSheet, { defval: "" });
+            const rows = XLSX.utils.sheet_to_json(zipSheet, { range: 3, defval: "" });
             rows.forEach(row => {
-              const zip = String(row["ZIP"] || row["zip"] || "").trim();
-              if (zip) zipMap[zip] = row;
+              const zip = String(row["ZIP Code"] || "").trim();
+              if (zip && /^\d{5}$/.test(zip)) zipMap[zip] = row;
             });
           }
 
@@ -4373,20 +4374,20 @@
           const countyMap = {};
           const gcSheet = wb.Sheets["County_GC_Info"];
           if (gcSheet) {
-            const rows = XLSX.utils.sheet_to_json(gcSheet, { defval: "" });
+            const rows = XLSX.utils.sheet_to_json(gcSheet, { range: 3, defval: "" });
             rows.forEach(row => {
-              const county = String(row["County"] || row["county"] || "").trim();
+              const county = String(row["County"] || "").trim();
               if (county) countyMap[county] = row;
             });
           }
 
           // Parse Permit_Process → permitList
           const permitSheet = wb.Sheets["Permit_Process"];
-          const permitList = permitSheet ? XLSX.utils.sheet_to_json(permitSheet, { defval: "" }) : [];
+          const permitList = permitSheet ? XLSX.utils.sheet_to_json(permitSheet, { range: 3, defval: "" }) : [];
 
           // Parse State_Resources → resourceList
           const resSheet = wb.Sheets["State_Resources"];
-          const resourceList = resSheet ? XLSX.utils.sheet_to_json(resSheet, { defval: "" }) : [];
+          const resourceList = resSheet ? XLSX.utils.sheet_to_json(resSheet, { range: 3, defval: "" }) : [];
 
           xlData = { zipMap, countyMap, permitList, resourceList, loaded: true, error: null };
           onExcelLoaded();
@@ -4457,13 +4458,13 @@
     function renderCountyPanel(county, region, zipInfo) {
       const result = document.getElementById("countyResult");
       const gc = xlData.countyMap[county] || {};
-      const notes = String(zipInfo["Notes"] || zipInfo["notes"] || gc["Notes"] || gc["notes"] || "").trim();
-      const tier = String(zipInfo["Tier"] || zipInfo["tier"] || "").trim();
+      const notes = String(zipInfo["Primary Municipality Notes"] || "").trim();
+      const tier = String(zipInfo["Metro Tier"] || "").trim();
 
       let html = `<div class="countyHeader">
         <div>
           <h2>${esc(county)} County</h2>
-          ${region ? `<p class="region">Region: ${esc(region)}${tier ? " · Tier: " + esc(tier) : ""}</p>` : ""}
+          ${region ? `<p class="region">Region: ${esc(region)}${tier ? " · " + esc(tier) : ""}${notes ? " · " + esc(notes) : ""}</p>` : ""}
         </div>
       </div>`;
 
@@ -4473,13 +4474,13 @@
       html += `<div class="infoCard">
         <div class="ic-hd">GC &amp; Contractor Lookup</div>
         <div class="ic-bd">`;
-      html += infoRow("GC Registration Required?", gcVal(gc, "GC Registration Required"));
-      const portal = gcVal(gc, "Permit Portal");
+      html += infoRow("GC Registration Required?", gcVal(gc, "GC Registration Required?"));
+      const portal = gcValRaw(gc, "Permit Portal / Building Dept URL");
       html += infoRow("Permit Portal", portal ? `<a href="${esc(portal)}" target="_blank" rel="noopener">${esc(portal)}</a>` : "—", true);
       html += infoRow("Building Dept Phone", gcVal(gc, "Building Dept Phone"));
-      const gcLookup = gcVal(gc, "GC Lookup URL");
+      const gcLookup = gcValRaw(gc, "GC Lookup / Verify URL");
       html += infoRow("GC Lookup", gcLookup ? `<a href="${esc(gcLookup)}" target="_blank" rel="noopener">${esc(gcLookup)}</a>` : "—", true);
-      const stateLookup = gcVal(gc, "State License Lookup URL");
+      const stateLookup = gcValRaw(gc, "State License Lookup URL");
       html += infoRow("State License Lookup", stateLookup ? `<a href="${esc(stateLookup)}" target="_blank" rel="noopener">${esc(stateLookup)}</a>` : "—", true);
       html += infoRow("Trades Requiring State License", gcVal(gc, "Trades Requiring State License"));
       html += `</div></div>`;
@@ -4494,7 +4495,7 @@
 
       // Investor Notes
       const investorNotes = gcVal(gc, "Key Investor Notes");
-      if (investorNotes) {
+      if (investorNotes && investorNotes !== "—") {
         html += `<div class="infoCard">
           <div class="ic-hd">Foreclosure &amp; Investor Notes</div>
           <div class="ic-bd"><p style="font-size:12px;color:var(--ink-700);line-height:1.6;margin:0">${esc(investorNotes)}</p></div>
@@ -4508,9 +4509,9 @@
           <div class="ic-hd">Statewide Resources</div>
           <div class="ic-bd">`;
         relevantResources.forEach(r => {
-          const name = String(r["Resource Name"] || r["Name"] || r["name"] || "").trim();
-          const desc = String(r["Description"] || r["desc"] || "").trim();
-          const url  = String(r["URL"] || r["url"] || "").trim();
+          const name = String(r["Resource Name"] || "").trim();
+          const desc = String(r["What It Does"] || "").trim();
+          const url  = String(r["URL"] || "").trim();
           if (!name) return;
           html += `<div class="resourceCard">
             <div class="rc-body">
@@ -4536,25 +4537,28 @@
             <table>
               <thead><tr>
                 <th>Work Type</th>
-                <th>Permit Required</th>
-                <th>Who Pulls</th>
-                <th>Cost</th>
+                <th>Permit Required?</th>
+                <th>Who Pulls It</th>
+                <th>Cost Range</th>
+                <th>Turnaround</th>
                 <th>Inspection Stages</th>
                 <th>Skip Consequences</th>
-                <th>Notes</th>
+                <th>Notes for Investors</th>
               </tr></thead>
               <tbody>`;
         xlData.permitList.forEach(row => {
-          const req = String(row["Permit Required"] || row["permit_required"] || "").trim().toUpperCase();
+          const reqRaw = String(row["Permit Required?"] || "").trim();
+          const req = reqRaw.toUpperCase().startsWith("YES") ? "YES" : reqRaw.toUpperCase().startsWith("NO") ? "NO" : reqRaw.toUpperCase();
           const rowClass = req === "YES" ? "permit-yes" : req === "NO" ? "permit-no" : "";
           html += `<tr class="${rowClass}">
-            <td>${esc(String(row["Work Type"] || row["work_type"] || ""))}</td>
-            <td>${esc(req)}</td>
-            <td>${esc(String(row["Who Pulls"] || row["who_pulls"] || ""))}</td>
-            <td>${esc(String(row["Cost"] || row["cost"] || ""))}</td>
-            <td style="white-space:normal;min-width:140px">${esc(String(row["Inspection Stages"] || row["inspection_stages"] || ""))}</td>
-            <td style="white-space:normal;min-width:140px">${esc(String(row["Skip Consequences"] || row["skip_consequences"] || ""))}</td>
-            <td style="white-space:normal;min-width:160px">${esc(String(row["Notes"] || row["notes"] || ""))}</td>
+            <td style="white-space:normal;min-width:160px">${esc(String(row["Work Type"] || ""))}</td>
+            <td style="white-space:normal;min-width:140px">${esc(reqRaw)}</td>
+            <td style="white-space:normal;min-width:120px">${esc(String(row["Who Pulls It"] || ""))}</td>
+            <td style="white-space:nowrap">${esc(String(row["Typical IL Cost Range"] || ""))}</td>
+            <td style="white-space:nowrap">${esc(String(row["Typical Turnaround (Business Days)"] || ""))}</td>
+            <td style="white-space:normal;min-width:160px">${esc(String(row["Inspection Stages"] || ""))}</td>
+            <td style="white-space:normal;min-width:160px">${esc(String(row["What Happens If You Skip It"] || ""))}</td>
+            <td style="white-space:normal;min-width:180px">${esc(String(row["Notes for Investors"] || ""))}</td>
           </tr>`;
         });
         html += `</tbody></table></div></div>`;
@@ -4565,6 +4569,11 @@
 
     function gcVal(gc, key) {
       return String(gc[key] || "").trim() || "—";
+    }
+    // Returns raw value (empty string if missing) — used for URL fields to avoid <a href="—">
+    function gcValRaw(gc, key) {
+      const v = String(gc[key] || "").trim();
+      return (v && v !== "—") ? v : "";
     }
 
     function infoRow(label, value, isHtml = false) {
@@ -4579,9 +4588,9 @@
       if (!xlData.resourceList) return [];
       const always = ["IDFPR","IDPH","GovOneStop","PrivateLenderLink"];
       return xlData.resourceList.filter(r => {
-        const name = String(r["Resource Name"] || r["Name"] || r["name"] || "");
-        const notes = String(r["Notes"] || r["notes"] || "");
-        const when = String(r["When to Use"] || r["when_to_use"] || "");
+        const name = String(r["Resource Name"] || "");
+        const notes = String(r["Notes"] || "");
+        const when = String(r["When to Use It"] || "");
         if (always.some(k => name.includes(k))) return true;
         const lc = county.toLowerCase();
         return notes.toLowerCase().includes(lc) || when.toLowerCase().includes(lc);
