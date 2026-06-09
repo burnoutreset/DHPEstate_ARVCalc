@@ -13,6 +13,8 @@
 
   <!-- jsPDF (PDF export) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- SheetJS (Excel parsing for County Info) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     /* ============================================================
@@ -1114,6 +1116,318 @@
     .resWorkflow ol li { margin-bottom: 4px; }
     .resWorkflow ol li b { color: var(--ink-900); }
 
+    /* ============================================================
+       MAIN TABS (Calculator / Team / County Info)
+       ============================================================ */
+    .mainTabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: 2px solid var(--ink-100);
+      margin-bottom: var(--s5);
+      flex-wrap: wrap;
+    }
+    .mainTab {
+      padding: 10px 18px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-600);
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      transition: color var(--t1), border-color var(--t1);
+      letter-spacing: -0.005em;
+    }
+    .mainTab:hover { color: var(--brand-700); }
+    .mainTab.active {
+      color: var(--brand-700);
+      border-bottom-color: var(--brand-700);
+      font-weight: 600;
+    }
+    .tabPanel { display: none; }
+    .tabPanel.active { display: block; }
+
+    /* ============================================================
+       TEAM / CONTACTS
+       ============================================================ */
+    .contactsToolbar {
+      display: flex;
+      gap: var(--s3);
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: var(--s4);
+    }
+    .contactsToolbar input {
+      max-width: 260px;
+    }
+    .filterChips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: var(--s4);
+    }
+    .filterChip {
+      padding: 4px 10px;
+      border-radius: var(--r1);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--ink-200);
+      background: var(--white);
+      color: var(--ink-600);
+      cursor: pointer;
+      transition: background var(--t1), border-color var(--t1), color var(--t1);
+      user-select: none;
+    }
+    .filterChip:hover { border-color: var(--ink-300); background: var(--ink-50); }
+    .filterChip.active {
+      background: var(--brand-700);
+      border-color: var(--brand-700);
+      color: var(--white);
+    }
+    /* Role chip colors */
+    .rchip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: var(--r1); font-size: 10px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+    .rchip-green { background: var(--signal-pos-bg); color: var(--signal-pos); }
+    .rchip-amber { background: var(--signal-warn-bg); color: var(--signal-warn); }
+    .rchip-blue  { background: var(--brand-50); color: var(--brand-700); }
+    [data-theme="dark"] .rchip-blue { background: var(--brand-100); }
+
+    .contactGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--s4);
+    }
+    .contactCard {
+      background: var(--white);
+      border: var(--border);
+      border-radius: var(--r3);
+      overflow: hidden;
+      transition: border-color var(--t1);
+    }
+    .contactCard:hover { border-color: var(--ink-200); }
+    .contactCard .cc-hd {
+      padding: var(--s3) var(--s4);
+      border-bottom: var(--border);
+      background: var(--ink-50);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--s2);
+    }
+    .contactCard .cc-name { font-family: var(--font-serif); font-size: 15px; font-weight: 600; color: var(--ink-900); margin: 0; }
+    .contactCard .cc-company { font-size: 11px; color: var(--ink-500); margin: 2px 0 0; }
+    .contactCard .cc-bd { padding: var(--s3) var(--s4); }
+    .contactCard .cc-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: var(--s2); }
+    .contactCard .cc-stars { color: var(--gold-500); font-size: 14px; letter-spacing: 1px; }
+    .contactCard .cc-meta { font-size: 11px; color: var(--ink-500); margin-top: var(--s2); }
+    .contactCard .cc-log-snippet { font-size: 11px; color: var(--ink-600); margin-top: 4px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contactCard .cc-actions { display: flex; gap: 6px; margin-top: var(--s3); }
+
+    /* Contact modal - override existing modal max-width */
+    #contactModal .modal { max-width: 680px; }
+    #logModal .modal { max-width: 560px; }
+
+    .roleChipSelector, .countyChipSelector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .selectorChip {
+      padding: 4px 10px;
+      border-radius: var(--r1);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--ink-200);
+      background: var(--white);
+      color: var(--ink-600);
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--t1), border-color var(--t1), color var(--t1);
+    }
+    .selectorChip:hover { border-color: var(--ink-300); background: var(--ink-50); }
+    .selectorChip.sel-green { background: var(--signal-pos-bg); border-color: var(--signal-pos); color: var(--signal-pos); }
+    .selectorChip.sel-amber { background: var(--signal-warn-bg); border-color: var(--signal-warn); color: var(--signal-warn); }
+    .selectorChip.sel-blue  { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-700); }
+    .selectorChip.sel-county { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-700); }
+
+    .starRating { display: flex; gap: 4px; margin-top: 6px; }
+    .starBtn { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--ink-200); padding: 0; line-height: 1; transition: color var(--t1); }
+    .starBtn.lit { color: var(--gold-500); }
+    .starBtn:hover { color: var(--gold-300); }
+
+    .logList { max-height: 320px; overflow-y: auto; }
+    .logEntry {
+      padding: var(--s2) var(--s3);
+      border-bottom: var(--border);
+      font-size: 12px;
+      color: var(--ink-700);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--s2);
+    }
+    .logEntry:last-child { border-bottom: none; }
+    .logEntry .logDate { font-size: 10px; color: var(--ink-400); white-space: nowrap; flex-shrink: 0; }
+    .logEntry .logText { flex: 1; }
+
+    /* ============================================================
+       COUNTY INFO TAB
+       ============================================================ */
+    .zipSearchBar {
+      display: flex;
+      gap: var(--s2);
+      align-items: center;
+      max-width: 400px;
+      margin-bottom: var(--s5);
+    }
+    .zipSearchBar input {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      letter-spacing: 0.04em;
+    }
+    .countyHeader {
+      display: flex;
+      align-items: center;
+      gap: var(--s3);
+      margin-bottom: var(--s5);
+      padding-bottom: var(--s4);
+      border-bottom: var(--border-strong);
+    }
+    .countyHeader h2 {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--ink-900);
+    }
+    .countyHeader .region {
+      font-size: 12px;
+      color: var(--ink-500);
+      margin: 4px 0 0;
+    }
+    .countyPanelGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--s4);
+    }
+    .infoCard {
+      background: var(--white);
+      border: var(--border);
+      border-radius: var(--r3);
+      overflow: hidden;
+    }
+    .infoCard .ic-hd {
+      padding: var(--s3) var(--s4);
+      background: var(--ink-50);
+      border-bottom: var(--border);
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink-600);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .infoCard .ic-bd { padding: var(--s3) var(--s4); }
+    .infoRow {
+      display: flex;
+      gap: var(--s2);
+      align-items: flex-start;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--ink-50);
+      font-size: 12px;
+    }
+    .infoRow:last-child { border-bottom: none; }
+    .infoRow .ir-label { color: var(--ink-500); font-weight: 500; min-width: 140px; flex-shrink: 0; font-size: 11px; }
+    .infoRow .ir-val { color: var(--ink-900); flex: 1; }
+    .infoRow a { color: var(--brand-600); text-decoration: none; word-break: break-all; }
+    .infoRow a:hover { text-decoration: underline; color: var(--brand-700); }
+
+    .permitToggle {
+      display: flex;
+      align-items: center;
+      gap: var(--s2);
+      cursor: pointer;
+      padding: var(--s3) var(--s4);
+      background: var(--ink-50);
+      border: var(--border);
+      border-radius: var(--r2);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-700);
+      user-select: none;
+      margin-top: var(--s4);
+      transition: background var(--t1);
+    }
+    .permitToggle:hover { background: var(--ink-100); }
+    .permitToggle .arrow { transition: transform var(--t2); }
+    .permitToggle.open .arrow { transform: rotate(90deg); }
+
+    .permitTableWrap {
+      display: none;
+      margin-top: var(--s2);
+    }
+    .permitTableWrap.open { display: block; }
+
+    .permit-yes td { background: var(--signal-pos-bg) !important; color: var(--signal-pos) !important; }
+    .permit-no  td { background: var(--signal-warn-bg) !important; color: var(--signal-warn) !important; }
+
+    .resourceCard {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--s3);
+      padding: var(--s3);
+      border: var(--border);
+      border-radius: var(--r2);
+      background: var(--white);
+      margin-bottom: var(--s2);
+      transition: border-color var(--t1);
+    }
+    .resourceCard:hover { border-color: var(--brand-500); }
+    .resourceCard .rc-body { flex: 1; min-width: 0; }
+    .resourceCard .rc-name { font-weight: 600; font-size: 13px; color: var(--ink-900); margin: 0 0 3px; }
+    .resourceCard .rc-desc { font-size: 11.5px; color: var(--ink-600); margin: 0 0 6px; line-height: 1.45; }
+
+    .xl-loading {
+      display: flex;
+      align-items: center;
+      gap: var(--s2);
+      padding: var(--s3) var(--s4);
+      background: var(--brand-50);
+      border: 1px solid var(--brand-100);
+      border-radius: var(--r2);
+      font-size: 12px;
+      color: var(--brand-700);
+      margin-bottom: var(--s4);
+    }
+    .xl-loading .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--brand-100);
+      border-top-color: var(--brand-700);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .xl-error {
+      padding: var(--s4);
+      background: var(--signal-neg-bg);
+      border: 1px solid var(--signal-neg);
+      border-radius: var(--r2);
+      color: var(--signal-neg);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .xl-error b { font-weight: 700; }
+    .noResults {
+      padding: var(--s5);
+      text-align: center;
+      color: var(--ink-500);
+      font-size: 13px;
+    }
+
   </style>
 </head>
 </head>
@@ -1139,6 +1453,15 @@
       </div>
     </div>
 
+    <!-- Main tab navigation -->
+    <div class="mainTabs">
+      <button class="mainTab active" data-tab="calculator">ARV Calculator</button>
+      <button class="mainTab" data-tab="team">Team</button>
+      <button class="mainTab" data-tab="countyinfo">County Info</button>
+    </div>
+
+    <!-- CALCULATOR TAB PANEL -->
+    <div class="tabPanel active" id="panel-calculator">
     <div class="grid">
       <!-- LEFT: INPUTS -->
       <div class="card">
@@ -1699,8 +2022,120 @@
       </div>
     </div>
   </div>
+    </div><!-- end panel-calculator -->
 
-  <!-- Modals -->
+    <!-- TEAM TAB PANEL -->
+    <div class="tabPanel" id="panel-team">
+      <div class="card">
+        <div class="hd">
+          <div><h2>Team Contacts</h2><p class="sub">Attorneys · Title · Lenders · Contractors · Agents</p></div>
+          <button class="btn primary" id="btnAddContact" type="button">+ Add Contact</button>
+        </div>
+        <div class="bd">
+          <div class="contactsToolbar">
+            <input type="search" id="contactSearch" placeholder="Search name, company, notes…" />
+            <button class="miniBtn" id="btnClearContactFilter" type="button">Clear filters</button>
+          </div>
+          <div class="filterChips" id="roleFilterChips"><!-- role filter chips inserted by JS --></div>
+          <div class="filterChips" id="countyFilterChips"><!-- county filter chips inserted by JS --></div>
+          <div id="contactGrid" class="contactGrid">
+            <div class="noResults">No contacts yet. Click <b>+ Add Contact</b> to get started.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end panel-team -->
+
+    <!-- COUNTY INFO TAB PANEL -->
+    <div class="tabPanel" id="panel-countyinfo">
+      <div class="card">
+        <div class="hd">
+          <div><h2>County Info</h2><p class="sub">Illinois county GC requirements, permit process, and investor notes</p></div>
+          <span class="chip" id="xlStatus">Loading Excel data…</span>
+        </div>
+        <div class="bd">
+          <div class="xl-loading" id="xlLoadingBar">
+            <div class="spinner"></div>
+            <span>Loading il_county_data.xlsx…</span>
+          </div>
+          <div id="xlErrorBar" style="display:none"></div>
+          <div id="countyInfoContent" style="display:none">
+            <div class="zipSearchBar">
+              <input type="text" id="zipInput" placeholder="Enter ZIP code" inputmode="numeric" maxlength="5" />
+              <button class="btn primary" id="btnZipSearch" type="button">Search</button>
+            </div>
+            <div id="countyResult"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end panel-countyinfo -->
+
+  </div><!-- end .wrap -->
+
+  <!-- Contact Add/Edit Modal -->
+  <div class="modalBack" id="contactModal">
+    <div class="modal" style="max-width:680px">
+      <div class="hd">
+        <h2 id="contactModalTitle">Add Contact</h2>
+        <button class="miniBtn" onclick="closeModal('contactModal')">Close</button>
+      </div>
+      <div class="bd">
+        <input type="hidden" id="editContactId" />
+        <div class="formgrid">
+          <div class="fg w6"><label>Name *</label><input id="cf_name" placeholder="Full name" /></div>
+          <div class="fg w6"><label>Company</label><input id="cf_company" placeholder="Company or brokerage" /></div>
+          <div class="fg w4"><label>Phone</label><input id="cf_phone" placeholder="(555) 555-5555" inputmode="tel" /></div>
+          <div class="fg w4"><label>Email</label><input id="cf_email" placeholder="email@example.com" type="email" /></div>
+          <div class="fg w4"><label>Website</label><input id="cf_website" placeholder="https://" /></div>
+          <div class="fg w12">
+            <label>Roles (select all that apply)</label>
+            <div class="roleChipSelector" id="roleChipSelector"></div>
+          </div>
+          <div class="fg w12">
+            <label>County Coverage</label>
+            <div class="countyChipSelector" id="countyChipSelector"></div>
+          </div>
+          <div class="fg w12">
+            <label>Star Rating</label>
+            <div class="starRating" id="starRating">
+              <button class="starBtn" data-star="1" type="button">★</button>
+              <button class="starBtn" data-star="2" type="button">★</button>
+              <button class="starBtn" data-star="3" type="button">★</button>
+              <button class="starBtn" data-star="4" type="button">★</button>
+              <button class="starBtn" data-star="5" type="button">★</button>
+            </div>
+          </div>
+          <div class="fg w12"><label>Notes</label><textarea id="cf_notes" placeholder="Notes about this contact…" style="min-height:80px"></textarea></div>
+        </div>
+        <div style="display:flex;gap:var(--s2);margin-top:var(--s4);justify-content:flex-end">
+          <button class="btn secondary" onclick="closeModal('contactModal')" type="button">Cancel</button>
+          <button class="btn primary" id="btnSaveContact" type="button">Save Contact</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversation Log Modal -->
+  <div class="modalBack" id="logModal">
+    <div class="modal" style="max-width:520px">
+      <div class="hd">
+        <div>
+          <h2 id="logModalName">Log</h2>
+          <p class="sub" style="margin:3px 0 0;font-size:12px;color:var(--ink-500)">Conversation history — newest first</p>
+        </div>
+        <button class="miniBtn" onclick="closeModal('logModal')">Close</button>
+      </div>
+      <div class="bd">
+        <div style="display:flex;gap:var(--s2);margin-bottom:var(--s3)">
+          <textarea id="logNewEntry" placeholder="Add a note or conversation summary…" style="flex:1;min-height:60px"></textarea>
+          <button class="btn primary" id="btnAddLog" type="button" style="align-self:flex-end">Add</button>
+        </div>
+        <input type="hidden" id="logContactId" />
+        <div class="logList" id="logList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals (existing ones) -->
   <div class="modalBack" id="libModal">
     <div class="modal">
       <div class="hd">
@@ -3894,6 +4329,614 @@
     window.loadFromLibrary = loadFromLibrary;
     window.deleteFromLibrary = deleteFromLibrary;
     window.closeModal = closeModal;
+
+    // ============================================================
+    // MAIN TAB SWITCHING
+    // ============================================================
+    document.querySelectorAll(".mainTab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.tab;
+        document.querySelectorAll(".mainTab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
+        tab.classList.add("active");
+        const panel = document.getElementById("panel-" + target);
+        if (panel) panel.classList.add("active");
+      });
+    });
+
+    // ============================================================
+    // EXCEL DATA LOADER (SheetJS)
+    // ============================================================
+    let xlData = { zipMap: null, countyMap: null, permitList: null, resourceList: null, loaded: false, error: null };
+
+    function loadExcelData() {
+      fetch('./il_county_data.xlsx')
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.arrayBuffer();
+        })
+        .then(buf => {
+          const wb = XLSX.read(buf, { type: 'array' });
+
+          // Parse ZIP_to_County → zipMap
+          // Sheets have 3 title/desc rows; actual headers are on row 4 (range: 3 = 0-indexed)
+          const zipMap = {};
+          const zipSheet = wb.Sheets["ZIP_to_County"];
+          if (zipSheet) {
+            const rows = XLSX.utils.sheet_to_json(zipSheet, { range: 3, defval: "" });
+            rows.forEach(row => {
+              const zip = String(row["ZIP Code"] || "").trim();
+              if (zip && /^\d{5}$/.test(zip)) zipMap[zip] = row;
+            });
+          }
+
+          // Parse County_GC_Info → countyMap
+          const countyMap = {};
+          const gcSheet = wb.Sheets["County_GC_Info"];
+          if (gcSheet) {
+            const rows = XLSX.utils.sheet_to_json(gcSheet, { range: 3, defval: "" });
+            rows.forEach(row => {
+              const county = String(row["County"] || "").trim();
+              if (county) countyMap[county] = row;
+            });
+          }
+
+          // Parse Permit_Process → permitList
+          const permitSheet = wb.Sheets["Permit_Process"];
+          const permitList = permitSheet ? XLSX.utils.sheet_to_json(permitSheet, { range: 3, defval: "" }) : [];
+
+          // Parse State_Resources → resourceList
+          const resSheet = wb.Sheets["State_Resources"];
+          const resourceList = resSheet ? XLSX.utils.sheet_to_json(resSheet, { range: 3, defval: "" }) : [];
+
+          xlData = { zipMap, countyMap, permitList, resourceList, loaded: true, error: null };
+          onExcelLoaded();
+        })
+        .catch(err => {
+          xlData.error = err.message;
+          onExcelError(err);
+        });
+    }
+
+    function onExcelLoaded() {
+      const loadBar = document.getElementById("xlLoadingBar");
+      if (loadBar) loadBar.style.display = "none";
+      const content = document.getElementById("countyInfoContent");
+      if (content) content.style.display = "block";
+      const status = document.getElementById("xlStatus");
+      if (status) { status.textContent = "Data loaded"; status.className = "chip good"; }
+    }
+
+    function onExcelError(err) {
+      const loadBar = document.getElementById("xlLoadingBar");
+      if (loadBar) loadBar.style.display = "none";
+      const errBar = document.getElementById("xlErrorBar");
+      if (errBar) {
+        errBar.style.display = "block";
+        errBar.className = "xl-error";
+        errBar.innerHTML = `<b>Could not load il_county_data.xlsx.</b><br>
+          ${err.message.includes("404") || err.message.includes("HTTP") ?
+            "Place <code>il_county_data.xlsx</code> in the same folder as <code>index.html</code> and reload." :
+            "Error: " + err.message + "<br>Ensure <code>il_county_data.xlsx</code> is in the same folder as <code>index.html</code>."}`;
+      }
+      const status = document.getElementById("xlStatus");
+      if (status) { status.textContent = "Data error"; status.className = "chip bad"; }
+    }
+
+    // Start loading Excel immediately
+    loadExcelData();
+
+    // ============================================================
+    // COUNTY INFO: ZIP SEARCH
+    // ============================================================
+    function handleZipSearch() {
+      const zip = (document.getElementById("zipInput").value || "").trim();
+      const result = document.getElementById("countyResult");
+      if (!zip || zip.length < 5) {
+        result.innerHTML = `<div class="note warn">Please enter a 5-digit ZIP code.</div>`;
+        return;
+      }
+      if (!xlData.loaded) {
+        result.innerHTML = `<div class="note">Excel data is still loading. Please wait a moment and try again.</div>`;
+        return;
+      }
+      const zipInfo = xlData.zipMap[zip];
+      if (!zipInfo) {
+        result.innerHTML = `<div class="note bad"><b>ZIP not found in Illinois.</b><br>
+          Verify the ZIP code or check the Excel data file (ZIP_to_County sheet).</div>`;
+        return;
+      }
+      const county = String(zipInfo["County"] || zipInfo["county"] || "").trim();
+      const region = String(zipInfo["Region"] || zipInfo["region"] || "").trim();
+      if (!county) {
+        result.innerHTML = `<div class="note warn">ZIP found but county name is missing in data.</div>`;
+        return;
+      }
+      renderCountyPanel(county, region, zipInfo);
+    }
+
+    function renderCountyPanel(county, region, zipInfo) {
+      const result = document.getElementById("countyResult");
+      const gc = xlData.countyMap[county] || {};
+      const notes = String(zipInfo["Primary Municipality Notes"] || "").trim();
+      const tier = String(zipInfo["Metro Tier"] || "").trim();
+
+      let html = `<div class="countyHeader">
+        <div>
+          <h2>${esc(county)} County</h2>
+          ${region ? `<p class="region">Region: ${esc(region)}${tier ? " · " + esc(tier) : ""}${notes ? " · " + esc(notes) : ""}</p>` : ""}
+        </div>
+      </div>`;
+
+      html += `<div class="countyPanelGrid">`;
+
+      // GC & Contractor Lookup
+      html += `<div class="infoCard">
+        <div class="ic-hd">GC &amp; Contractor Lookup</div>
+        <div class="ic-bd">`;
+      html += infoRow("GC Registration Required?", gcVal(gc, "GC Registration Required?"));
+      const portal = gcValRaw(gc, "Permit Portal / Building Dept URL");
+      html += infoRow("Permit Portal", portal ? `<a href="${esc(portal)}" target="_blank" rel="noopener">${esc(portal)}</a>` : "—", true);
+      html += infoRow("Building Dept Phone", gcVal(gc, "Building Dept Phone"));
+      const gcLookup = gcValRaw(gc, "GC Lookup / Verify URL");
+      html += infoRow("GC Lookup", gcLookup ? `<a href="${esc(gcLookup)}" target="_blank" rel="noopener">${esc(gcLookup)}</a>` : "—", true);
+      const stateLookup = gcValRaw(gc, "State License Lookup URL");
+      html += infoRow("State License Lookup", stateLookup ? `<a href="${esc(stateLookup)}" target="_blank" rel="noopener">${esc(stateLookup)}</a>` : "—", true);
+      html += infoRow("Trades Requiring State License", gcVal(gc, "Trades Requiring State License"));
+      html += `</div></div>`;
+
+      // Permit Process
+      html += `<div class="infoCard">
+        <div class="ic-hd">Permit Process</div>
+        <div class="ic-bd">`;
+      html += infoRow("Permit Process Notes", gcVal(gc, "Permit Process Notes"));
+      html += infoRow("Unincorporated vs Municipal", gcVal(gc, "Unincorporated vs Municipal Notes"));
+      html += `</div></div>`;
+
+      // Investor Notes
+      const investorNotes = gcVal(gc, "Key Investor Notes");
+      if (investorNotes && investorNotes !== "—") {
+        html += `<div class="infoCard">
+          <div class="ic-hd">Foreclosure &amp; Investor Notes</div>
+          <div class="ic-bd"><p style="font-size:12px;color:var(--ink-700);line-height:1.6;margin:0">${esc(investorNotes)}</p></div>
+        </div>`;
+      }
+
+      // Statewide Resources
+      const relevantResources = filterResources(county);
+      if (relevantResources.length) {
+        html += `<div class="infoCard" style="grid-column: 1 / -1">
+          <div class="ic-hd">Statewide Resources</div>
+          <div class="ic-bd">`;
+        relevantResources.forEach(r => {
+          const name = String(r["Resource Name"] || "").trim();
+          const desc = String(r["What It Does"] || "").trim();
+          const url  = String(r["URL"] || "").trim();
+          if (!name) return;
+          html += `<div class="resourceCard">
+            <div class="rc-body">
+              <p class="rc-name">${esc(name)}</p>
+              ${desc ? `<p class="rc-desc">${esc(desc)}</p>` : ""}
+              ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="btn secondary" style="font-size:11px;padding:4px 10px;display:inline-flex">Visit ↗</a>` : ""}
+            </div>
+          </div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      html += `</div>`; // end countyPanelGrid
+
+      // Permit Guide (collapsible)
+      if (xlData.permitList && xlData.permitList.length) {
+        html += `<div class="permitToggle" id="permitToggleBtn" onclick="togglePermitTable()">
+          <span class="arrow">▶</span>
+          <span>Full Permit Process Guide (${xlData.permitList.length} work types)</span>
+        </div>
+        <div class="permitTableWrap" id="permitTableWrap">
+          <div class="tblWrap">
+            <table>
+              <thead><tr>
+                <th>Work Type</th>
+                <th>Permit Required?</th>
+                <th>Who Pulls It</th>
+                <th>Cost Range</th>
+                <th>Turnaround</th>
+                <th>Inspection Stages</th>
+                <th>Skip Consequences</th>
+                <th>Notes for Investors</th>
+              </tr></thead>
+              <tbody>`;
+        xlData.permitList.forEach(row => {
+          const reqRaw = String(row["Permit Required?"] || "").trim();
+          const req = reqRaw.toUpperCase().startsWith("YES") ? "YES" : reqRaw.toUpperCase().startsWith("NO") ? "NO" : reqRaw.toUpperCase();
+          const rowClass = req === "YES" ? "permit-yes" : req === "NO" ? "permit-no" : "";
+          html += `<tr class="${rowClass}">
+            <td style="white-space:normal;min-width:160px">${esc(String(row["Work Type"] || ""))}</td>
+            <td style="white-space:normal;min-width:140px">${esc(reqRaw)}</td>
+            <td style="white-space:normal;min-width:120px">${esc(String(row["Who Pulls It"] || ""))}</td>
+            <td style="white-space:nowrap">${esc(String(row["Typical IL Cost Range"] || ""))}</td>
+            <td style="white-space:nowrap">${esc(String(row["Typical Turnaround (Business Days)"] || ""))}</td>
+            <td style="white-space:normal;min-width:160px">${esc(String(row["Inspection Stages"] || ""))}</td>
+            <td style="white-space:normal;min-width:160px">${esc(String(row["What Happens If You Skip It"] || ""))}</td>
+            <td style="white-space:normal;min-width:180px">${esc(String(row["Notes for Investors"] || ""))}</td>
+          </tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+      }
+
+      result.innerHTML = html;
+    }
+
+    function gcVal(gc, key) {
+      return String(gc[key] || "").trim() || "—";
+    }
+    // Returns raw value (empty string if missing) — used for URL fields to avoid <a href="—">
+    function gcValRaw(gc, key) {
+      const v = String(gc[key] || "").trim();
+      return (v && v !== "—") ? v : "";
+    }
+
+    function infoRow(label, value, isHtml = false) {
+      const val = isHtml ? value : `<span>${esc(String(value || "—"))}</span>`;
+      return `<div class="infoRow">
+        <span class="ir-label">${esc(label)}</span>
+        <span class="ir-val">${val}</span>
+      </div>`;
+    }
+
+    function filterResources(county) {
+      if (!xlData.resourceList) return [];
+      const always = ["IDFPR","IDPH","GovOneStop","PrivateLenderLink"];
+      return xlData.resourceList.filter(r => {
+        const name = String(r["Resource Name"] || "");
+        const notes = String(r["Notes"] || "");
+        const when = String(r["When to Use It"] || "");
+        if (always.some(k => name.includes(k))) return true;
+        const lc = county.toLowerCase();
+        return notes.toLowerCase().includes(lc) || when.toLowerCase().includes(lc);
+      });
+    }
+
+    function togglePermitTable() {
+      const btn = document.getElementById("permitToggleBtn");
+      const wrap = document.getElementById("permitTableWrap");
+      if (btn && wrap) {
+        btn.classList.toggle("open");
+        wrap.classList.toggle("open");
+      }
+    }
+    window.togglePermitTable = togglePermitTable;
+
+    function esc(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+
+    document.getElementById("btnZipSearch").addEventListener("click", handleZipSearch);
+    document.getElementById("zipInput").addEventListener("keydown", e => { if (e.key === "Enter") handleZipSearch(); });
+
+    // ============================================================
+    // TEAM / CONTACTS MANAGER
+    // ============================================================
+    const CONTACTS_KEY = "dhp_contacts_v1";
+
+    const ROLE_DEFS = [
+      { label: "Attorney",       color: "green" },
+      { label: "Title Company",  color: "green" },
+      { label: "Hard Money Lender", color: "green" },
+      { label: "Appraiser",      color: "green" },
+      { label: "GC",             color: "amber" },
+      { label: "Plumber",        color: "amber" },
+      { label: "Electrician",    color: "amber" },
+      { label: "HVAC",           color: "amber" },
+      { label: "Roofer",         color: "amber" },
+      { label: "Wholesaler",     color: "blue"  },
+      { label: "Agent",          color: "blue"  },
+      { label: "Other",          color: "blue"  },
+    ];
+
+    const COUNTY_OPTIONS = ["Lake","Kane","McHenry","Cook","DuPage","Will","Other"];
+
+    let contactStarValue = 0;
+    let contactFilters = { roles: [], counties: [] };
+
+    function loadContacts() {
+      try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || "[]"); } catch(e){ return []; }
+    }
+    function saveContacts(contacts) {
+      try { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts)); } catch(e){}
+    }
+
+    function roleChipClass(color) {
+      if (color === "green") return "rchip rchip-green";
+      if (color === "amber") return "rchip rchip-amber";
+      return "rchip rchip-blue";
+    }
+
+    function renderStars(n) {
+      let s = "";
+      for (let i=1; i<=5; i++) s += `<span style="color:${i<=n ? "var(--gold-500)" : "var(--ink-200)"}">★</span>`;
+      return s;
+    }
+
+    function buildFilterChips() {
+      const roleEl = document.getElementById("roleFilterChips");
+      const countyEl = document.getElementById("countyFilterChips");
+      if (!roleEl || !countyEl) return;
+
+      roleEl.innerHTML = ROLE_DEFS.map(r => {
+        const active = contactFilters.roles.includes(r.label) ? " active" : "";
+        return `<span class="filterChip${active}" data-role="${esc(r.label)}">${esc(r.label)}</span>`;
+      }).join("");
+
+      countyEl.innerHTML = COUNTY_OPTIONS.map(c => {
+        const active = contactFilters.counties.includes(c) ? " active" : "";
+        return `<span class="filterChip${active}" data-county="${esc(c)}">${esc(c)}</span>`;
+      }).join("");
+
+      roleEl.querySelectorAll(".filterChip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const role = chip.dataset.role;
+          const idx = contactFilters.roles.indexOf(role);
+          if (idx >= 0) contactFilters.roles.splice(idx, 1);
+          else contactFilters.roles.push(role);
+          buildFilterChips();
+          renderContactGrid();
+        });
+      });
+      countyEl.querySelectorAll(".filterChip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const county = chip.dataset.county;
+          const idx = contactFilters.counties.indexOf(county);
+          if (idx >= 0) contactFilters.counties.splice(idx, 1);
+          else contactFilters.counties.push(county);
+          buildFilterChips();
+          renderContactGrid();
+        });
+      });
+    }
+
+    function renderContactGrid() {
+      const grid = document.getElementById("contactGrid");
+      if (!grid) return;
+      let contacts = loadContacts();
+      const search = (document.getElementById("contactSearch")?.value || "").toLowerCase().trim();
+
+      // Filter
+      contacts = contacts.filter(c => {
+        // Role filter (AND logic)
+        if (contactFilters.roles.length) {
+          if (!contactFilters.roles.every(r => (c.roles || []).includes(r))) return false;
+        }
+        // County filter (AND logic)
+        if (contactFilters.counties.length) {
+          if (!contactFilters.counties.every(co => (c.counties || []).includes(co))) return false;
+        }
+        // Search
+        if (search) {
+          const haystack = [c.name, c.company, c.notes, ...(c.log || []).map(e => e.text)].join(" ").toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (!contacts.length) {
+        grid.innerHTML = `<div class="noResults">No contacts match your filters.</div>`;
+        return;
+      }
+
+      grid.innerHTML = contacts.map(c => {
+        const roleChips = (c.roles || []).map(r => {
+          const def = ROLE_DEFS.find(d => d.label === r);
+          const cls = def ? roleChipClass(def.color) : "rchip rchip-blue";
+          return `<span class="${cls}">${esc(r)}</span>`;
+        }).join("");
+        const countyChips = (c.counties || []).map(co =>
+          `<span class="rchip rchip-blue">${esc(co)}</span>`
+        ).join("");
+        const lastLog = (c.log || [])[0];
+        const lastDate = lastLog ? lastLog.date : null;
+        return `<div class="contactCard">
+          <div class="cc-hd">
+            <div>
+              <p class="cc-name">${esc(c.name || "—")}</p>
+              ${c.company ? `<p class="cc-company">${esc(c.company)}</p>` : ""}
+            </div>
+            <div style="text-align:right">
+              <div class="cc-stars">${renderStars(c.stars || 0)}</div>
+            </div>
+          </div>
+          <div class="cc-bd">
+            <div class="cc-chips">${roleChips}${countyChips}</div>
+            ${lastDate ? `<div class="cc-meta">Last contact: ${esc(lastDate)}</div>` : ""}
+            ${lastLog ? `<div class="cc-log-snippet">${esc(lastLog.text)}</div>` : ""}
+            <div class="cc-actions">
+              <button class="miniBtn accent" onclick="openEditContact('${esc(c.id)}')" type="button">Edit</button>
+              <button class="miniBtn" onclick="openLogModal('${esc(c.id)}')" type="button">Log</button>
+              <button class="miniBtn danger" onclick="deleteContact('${esc(c.id)}')" type="button">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    function openAddContact() {
+      document.getElementById("contactModalTitle").textContent = "Add Contact";
+      document.getElementById("editContactId").value = "";
+      document.getElementById("cf_name").value = "";
+      document.getElementById("cf_company").value = "";
+      document.getElementById("cf_phone").value = "";
+      document.getElementById("cf_email").value = "";
+      document.getElementById("cf_website").value = "";
+      document.getElementById("cf_notes").value = "";
+      contactStarValue = 0;
+      buildContactModalChips([], []);
+      updateStarUI();
+      openModal("contactModal");
+    }
+
+    function openEditContact(id) {
+      const contacts = loadContacts();
+      const c = contacts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById("contactModalTitle").textContent = "Edit Contact";
+      document.getElementById("editContactId").value = id;
+      document.getElementById("cf_name").value = c.name || "";
+      document.getElementById("cf_company").value = c.company || "";
+      document.getElementById("cf_phone").value = c.phone || "";
+      document.getElementById("cf_email").value = c.email || "";
+      document.getElementById("cf_website").value = c.website || "";
+      document.getElementById("cf_notes").value = c.notes || "";
+      contactStarValue = c.stars || 0;
+      buildContactModalChips(c.roles || [], c.counties || []);
+      updateStarUI();
+      openModal("contactModal");
+    }
+    window.openEditContact = openEditContact;
+
+    function buildContactModalChips(selectedRoles, selectedCounties) {
+      const roleEl = document.getElementById("roleChipSelector");
+      const countyEl = document.getElementById("countyChipSelector");
+      if (!roleEl || !countyEl) return;
+
+      roleEl.innerHTML = ROLE_DEFS.map(r => {
+        const sel = selectedRoles.includes(r.label);
+        const selCls = sel ? (r.color === "green" ? " sel-green" : r.color === "amber" ? " sel-amber" : " sel-blue") : "";
+        return `<span class="selectorChip${selCls}" data-role="${esc(r.label)}">${esc(r.label)}</span>`;
+      }).join("");
+
+      countyEl.innerHTML = COUNTY_OPTIONS.map(co => {
+        const sel = selectedCounties.includes(co);
+        return `<span class="selectorChip${sel ? " sel-county" : ""}" data-county="${esc(co)}">${esc(co)}</span>`;
+      }).join("");
+
+      roleEl.querySelectorAll(".selectorChip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const role = chip.dataset.role;
+          const def = ROLE_DEFS.find(d => d.label === role);
+          const selCls = def ? (def.color === "green" ? "sel-green" : def.color === "amber" ? "sel-amber" : "sel-blue") : "sel-blue";
+          chip.classList.toggle(selCls);
+        });
+      });
+      countyEl.querySelectorAll(".selectorChip").forEach(chip => {
+        chip.addEventListener("click", () => chip.classList.toggle("sel-county"));
+      });
+    }
+
+    function updateStarUI() {
+      document.querySelectorAll("#starRating .starBtn").forEach(btn => {
+        const s = Number(btn.dataset.star);
+        btn.classList.toggle("lit", s <= contactStarValue);
+      });
+    }
+
+    document.querySelectorAll("#starRating .starBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        contactStarValue = Number(btn.dataset.star);
+        updateStarUI();
+      });
+    });
+
+    function saveContact() {
+      const name = (document.getElementById("cf_name").value || "").trim();
+      if (!name) { alert("Name is required."); return; }
+
+      const selectedRoles = Array.from(document.querySelectorAll("#roleChipSelector .selectorChip.sel-green, #roleChipSelector .selectorChip.sel-amber, #roleChipSelector .selectorChip.sel-blue")).map(c => c.dataset.role);
+      const selectedCounties = Array.from(document.querySelectorAll("#countyChipSelector .selectorChip.sel-county")).map(c => c.dataset.county);
+
+      const contacts = loadContacts();
+      const id = document.getElementById("editContactId").value;
+
+      if (id) {
+        const idx = contacts.findIndex(c => c.id === id);
+        if (idx >= 0) {
+          contacts[idx] = { ...contacts[idx], name, company: document.getElementById("cf_company").value, phone: document.getElementById("cf_phone").value, email: document.getElementById("cf_email").value, website: document.getElementById("cf_website").value, notes: document.getElementById("cf_notes").value, roles: selectedRoles, counties: selectedCounties, stars: contactStarValue };
+        }
+      } else {
+        contacts.unshift({ id: "c" + Date.now(), name, company: document.getElementById("cf_company").value, phone: document.getElementById("cf_phone").value, email: document.getElementById("cf_email").value, website: document.getElementById("cf_website").value, notes: document.getElementById("cf_notes").value, roles: selectedRoles, counties: selectedCounties, stars: contactStarValue, log: [] });
+      }
+      saveContacts(contacts);
+      closeModal("contactModal");
+      renderContactGrid();
+    }
+
+    function deleteContact(id) {
+      if (!confirm("Delete this contact? This cannot be undone.")) return;
+      const contacts = loadContacts().filter(c => c.id !== id);
+      saveContacts(contacts);
+      renderContactGrid();
+    }
+    window.deleteContact = deleteContact;
+
+    function openLogModal(id) {
+      const contacts = loadContacts();
+      const c = contacts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById("logModalName").textContent = c.name || "Log";
+      document.getElementById("logContactId").value = id;
+      document.getElementById("logNewEntry").value = "";
+      renderLogList(c.log || []);
+      openModal("logModal");
+    }
+    window.openLogModal = openLogModal;
+
+    function renderLogList(log) {
+      const el = document.getElementById("logList");
+      if (!el) return;
+      if (!log.length) { el.innerHTML = `<div class="noResults" style="padding:var(--s3)">No log entries yet.</div>`; return; }
+      el.innerHTML = log.map((entry, idx) =>
+        `<div class="logEntry">
+          <span class="logText">${esc(entry.text)}</span>
+          <span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="logDate">${esc(entry.date)}</span>
+            <button class="miniBtn danger" style="padding:2px 6px;font-size:10px" onclick="deleteLogEntry('${esc(document.getElementById("logContactId").value)}',${idx})" type="button">×</button>
+          </span>
+        </div>`
+      ).join("");
+    }
+
+    function addLogEntry() {
+      const text = (document.getElementById("logNewEntry").value || "").trim();
+      if (!text) return;
+      const id = document.getElementById("logContactId").value;
+      const contacts = loadContacts();
+      const idx = contacts.findIndex(c => c.id === id);
+      if (idx < 0) return;
+      const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      contacts[idx].log = contacts[idx].log || [];
+      contacts[idx].log.unshift({ date: today, text });
+      saveContacts(contacts);
+      document.getElementById("logNewEntry").value = "";
+      renderLogList(contacts[idx].log);
+      renderContactGrid();
+    }
+
+    function deleteLogEntry(contactId, logIdx) {
+      const contacts = loadContacts();
+      const idx = contacts.findIndex(c => c.id === contactId);
+      if (idx < 0) return;
+      contacts[idx].log = (contacts[idx].log || []).filter((_, i) => i !== logIdx);
+      saveContacts(contacts);
+      renderLogList(contacts[idx].log);
+      renderContactGrid();
+    }
+    window.deleteLogEntry = deleteLogEntry;
+
+    // Wire up contact events
+    document.getElementById("btnAddContact").addEventListener("click", openAddContact);
+    document.getElementById("btnSaveContact").addEventListener("click", saveContact);
+    document.getElementById("btnAddLog").addEventListener("click", addLogEntry);
+    document.getElementById("btnClearContactFilter").addEventListener("click", () => {
+      contactFilters = { roles: [], counties: [] };
+      document.getElementById("contactSearch").value = "";
+      buildFilterChips();
+      renderContactGrid();
+    });
+    document.getElementById("contactSearch").addEventListener("input", renderContactGrid);
+
+    // Init contact UI
+    buildFilterChips();
+    renderContactGrid();
+
   </script>
 </body>
 </html>
