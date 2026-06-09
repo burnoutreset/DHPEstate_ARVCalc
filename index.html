@@ -4329,6 +4329,605 @@
     window.loadFromLibrary = loadFromLibrary;
     window.deleteFromLibrary = deleteFromLibrary;
     window.closeModal = closeModal;
+
+    // ============================================================
+    // MAIN TAB SWITCHING
+    // ============================================================
+    document.querySelectorAll(".mainTab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.tab;
+        document.querySelectorAll(".mainTab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tabPanel").forEach(p => p.classList.remove("active"));
+        tab.classList.add("active");
+        const panel = document.getElementById("panel-" + target);
+        if (panel) panel.classList.add("active");
+      });
+    });
+
+    // ============================================================
+    // EXCEL DATA LOADER (SheetJS)
+    // ============================================================
+    let xlData = { zipMap: null, countyMap: null, permitList: null, resourceList: null, loaded: false, error: null };
+
+    function loadExcelData() {
+      fetch('./il_county_data.xlsx')
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.arrayBuffer();
+        })
+        .then(buf => {
+          const wb = XLSX.read(buf, { type: 'array' });
+
+          // Parse ZIP_to_County → zipMap
+          const zipMap = {};
+          const zipSheet = wb.Sheets["ZIP_to_County"];
+          if (zipSheet) {
+            const rows = XLSX.utils.sheet_to_json(zipSheet, { defval: "" });
+            rows.forEach(row => {
+              const zip = String(row["ZIP"] || row["zip"] || "").trim();
+              if (zip) zipMap[zip] = row;
+            });
+          }
+
+          // Parse County_GC_Info → countyMap
+          const countyMap = {};
+          const gcSheet = wb.Sheets["County_GC_Info"];
+          if (gcSheet) {
+            const rows = XLSX.utils.sheet_to_json(gcSheet, { defval: "" });
+            rows.forEach(row => {
+              const county = String(row["County"] || row["county"] || "").trim();
+              if (county) countyMap[county] = row;
+            });
+          }
+
+          // Parse Permit_Process → permitList
+          const permitSheet = wb.Sheets["Permit_Process"];
+          const permitList = permitSheet ? XLSX.utils.sheet_to_json(permitSheet, { defval: "" }) : [];
+
+          // Parse State_Resources → resourceList
+          const resSheet = wb.Sheets["State_Resources"];
+          const resourceList = resSheet ? XLSX.utils.sheet_to_json(resSheet, { defval: "" }) : [];
+
+          xlData = { zipMap, countyMap, permitList, resourceList, loaded: true, error: null };
+          onExcelLoaded();
+        })
+        .catch(err => {
+          xlData.error = err.message;
+          onExcelError(err);
+        });
+    }
+
+    function onExcelLoaded() {
+      const loadBar = document.getElementById("xlLoadingBar");
+      if (loadBar) loadBar.style.display = "none";
+      const content = document.getElementById("countyInfoContent");
+      if (content) content.style.display = "block";
+      const status = document.getElementById("xlStatus");
+      if (status) { status.textContent = "Data loaded"; status.className = "chip good"; }
+    }
+
+    function onExcelError(err) {
+      const loadBar = document.getElementById("xlLoadingBar");
+      if (loadBar) loadBar.style.display = "none";
+      const errBar = document.getElementById("xlErrorBar");
+      if (errBar) {
+        errBar.style.display = "block";
+        errBar.className = "xl-error";
+        errBar.innerHTML = `<b>Could not load il_county_data.xlsx.</b><br>
+          ${err.message.includes("404") || err.message.includes("HTTP") ?
+            "Place <code>il_county_data.xlsx</code> in the same folder as <code>index.html</code> and reload." :
+            "Error: " + err.message + "<br>Ensure <code>il_county_data.xlsx</code> is in the same folder as <code>index.html</code>."}`;
+      }
+      const status = document.getElementById("xlStatus");
+      if (status) { status.textContent = "Data error"; status.className = "chip bad"; }
+    }
+
+    // Start loading Excel immediately
+    loadExcelData();
+
+    // ============================================================
+    // COUNTY INFO: ZIP SEARCH
+    // ============================================================
+    function handleZipSearch() {
+      const zip = (document.getElementById("zipInput").value || "").trim();
+      const result = document.getElementById("countyResult");
+      if (!zip || zip.length < 5) {
+        result.innerHTML = `<div class="note warn">Please enter a 5-digit ZIP code.</div>`;
+        return;
+      }
+      if (!xlData.loaded) {
+        result.innerHTML = `<div class="note">Excel data is still loading. Please wait a moment and try again.</div>`;
+        return;
+      }
+      const zipInfo = xlData.zipMap[zip];
+      if (!zipInfo) {
+        result.innerHTML = `<div class="note bad"><b>ZIP not found in Illinois.</b><br>
+          Verify the ZIP code or check the Excel data file (ZIP_to_County sheet).</div>`;
+        return;
+      }
+      const county = String(zipInfo["County"] || zipInfo["county"] || "").trim();
+      const region = String(zipInfo["Region"] || zipInfo["region"] || "").trim();
+      if (!county) {
+        result.innerHTML = `<div class="note warn">ZIP found but county name is missing in data.</div>`;
+        return;
+      }
+      renderCountyPanel(county, region, zipInfo);
+    }
+
+    function renderCountyPanel(county, region, zipInfo) {
+      const result = document.getElementById("countyResult");
+      const gc = xlData.countyMap[county] || {};
+      const notes = String(zipInfo["Notes"] || zipInfo["notes"] || gc["Notes"] || gc["notes"] || "").trim();
+      const tier = String(zipInfo["Tier"] || zipInfo["tier"] || "").trim();
+
+      let html = `<div class="countyHeader">
+        <div>
+          <h2>${esc(county)} County</h2>
+          ${region ? `<p class="region">Region: ${esc(region)}${tier ? " · Tier: " + esc(tier) : ""}</p>` : ""}
+        </div>
+      </div>`;
+
+      html += `<div class="countyPanelGrid">`;
+
+      // GC & Contractor Lookup
+      html += `<div class="infoCard">
+        <div class="ic-hd">GC &amp; Contractor Lookup</div>
+        <div class="ic-bd">`;
+      html += infoRow("GC Registration Required?", gcVal(gc, "GC Registration Required"));
+      const portal = gcVal(gc, "Permit Portal");
+      html += infoRow("Permit Portal", portal ? `<a href="${esc(portal)}" target="_blank" rel="noopener">${esc(portal)}</a>` : "—", true);
+      html += infoRow("Building Dept Phone", gcVal(gc, "Building Dept Phone"));
+      const gcLookup = gcVal(gc, "GC Lookup URL");
+      html += infoRow("GC Lookup", gcLookup ? `<a href="${esc(gcLookup)}" target="_blank" rel="noopener">${esc(gcLookup)}</a>` : "—", true);
+      const stateLookup = gcVal(gc, "State License Lookup URL");
+      html += infoRow("State License Lookup", stateLookup ? `<a href="${esc(stateLookup)}" target="_blank" rel="noopener">${esc(stateLookup)}</a>` : "—", true);
+      html += infoRow("Trades Requiring State License", gcVal(gc, "Trades Requiring State License"));
+      html += `</div></div>`;
+
+      // Permit Process
+      html += `<div class="infoCard">
+        <div class="ic-hd">Permit Process</div>
+        <div class="ic-bd">`;
+      html += infoRow("Permit Process Notes", gcVal(gc, "Permit Process Notes"));
+      html += infoRow("Unincorporated vs Municipal", gcVal(gc, "Unincorporated vs Municipal Notes"));
+      html += `</div></div>`;
+
+      // Investor Notes
+      const investorNotes = gcVal(gc, "Key Investor Notes");
+      if (investorNotes) {
+        html += `<div class="infoCard">
+          <div class="ic-hd">Foreclosure &amp; Investor Notes</div>
+          <div class="ic-bd"><p style="font-size:12px;color:var(--ink-700);line-height:1.6;margin:0">${esc(investorNotes)}</p></div>
+        </div>`;
+      }
+
+      // Statewide Resources
+      const relevantResources = filterResources(county);
+      if (relevantResources.length) {
+        html += `<div class="infoCard" style="grid-column: 1 / -1">
+          <div class="ic-hd">Statewide Resources</div>
+          <div class="ic-bd">`;
+        relevantResources.forEach(r => {
+          const name = String(r["Resource Name"] || r["Name"] || r["name"] || "").trim();
+          const desc = String(r["Description"] || r["desc"] || "").trim();
+          const url  = String(r["URL"] || r["url"] || "").trim();
+          if (!name) return;
+          html += `<div class="resourceCard">
+            <div class="rc-body">
+              <p class="rc-name">${esc(name)}</p>
+              ${desc ? `<p class="rc-desc">${esc(desc)}</p>` : ""}
+              ${url ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="btn secondary" style="font-size:11px;padding:4px 10px;display:inline-flex">Visit ↗</a>` : ""}
+            </div>
+          </div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      html += `</div>`; // end countyPanelGrid
+
+      // Permit Guide (collapsible)
+      if (xlData.permitList && xlData.permitList.length) {
+        html += `<div class="permitToggle" id="permitToggleBtn" onclick="togglePermitTable()">
+          <span class="arrow">▶</span>
+          <span>Full Permit Process Guide (${xlData.permitList.length} work types)</span>
+        </div>
+        <div class="permitTableWrap" id="permitTableWrap">
+          <div class="tblWrap">
+            <table>
+              <thead><tr>
+                <th>Work Type</th>
+                <th>Permit Required</th>
+                <th>Who Pulls</th>
+                <th>Cost</th>
+                <th>Inspection Stages</th>
+                <th>Skip Consequences</th>
+                <th>Notes</th>
+              </tr></thead>
+              <tbody>`;
+        xlData.permitList.forEach(row => {
+          const req = String(row["Permit Required"] || row["permit_required"] || "").trim().toUpperCase();
+          const rowClass = req === "YES" ? "permit-yes" : req === "NO" ? "permit-no" : "";
+          html += `<tr class="${rowClass}">
+            <td>${esc(String(row["Work Type"] || row["work_type"] || ""))}</td>
+            <td>${esc(req)}</td>
+            <td>${esc(String(row["Who Pulls"] || row["who_pulls"] || ""))}</td>
+            <td>${esc(String(row["Cost"] || row["cost"] || ""))}</td>
+            <td style="white-space:normal;min-width:140px">${esc(String(row["Inspection Stages"] || row["inspection_stages"] || ""))}</td>
+            <td style="white-space:normal;min-width:140px">${esc(String(row["Skip Consequences"] || row["skip_consequences"] || ""))}</td>
+            <td style="white-space:normal;min-width:160px">${esc(String(row["Notes"] || row["notes"] || ""))}</td>
+          </tr>`;
+        });
+        html += `</tbody></table></div></div>`;
+      }
+
+      result.innerHTML = html;
+    }
+
+    function gcVal(gc, key) {
+      return String(gc[key] || "").trim() || "—";
+    }
+
+    function infoRow(label, value, isHtml = false) {
+      const val = isHtml ? value : `<span>${esc(String(value || "—"))}</span>`;
+      return `<div class="infoRow">
+        <span class="ir-label">${esc(label)}</span>
+        <span class="ir-val">${val}</span>
+      </div>`;
+    }
+
+    function filterResources(county) {
+      if (!xlData.resourceList) return [];
+      const always = ["IDFPR","IDPH","GovOneStop","PrivateLenderLink"];
+      return xlData.resourceList.filter(r => {
+        const name = String(r["Resource Name"] || r["Name"] || r["name"] || "");
+        const notes = String(r["Notes"] || r["notes"] || "");
+        const when = String(r["When to Use"] || r["when_to_use"] || "");
+        if (always.some(k => name.includes(k))) return true;
+        const lc = county.toLowerCase();
+        return notes.toLowerCase().includes(lc) || when.toLowerCase().includes(lc);
+      });
+    }
+
+    function togglePermitTable() {
+      const btn = document.getElementById("permitToggleBtn");
+      const wrap = document.getElementById("permitTableWrap");
+      if (btn && wrap) {
+        btn.classList.toggle("open");
+        wrap.classList.toggle("open");
+      }
+    }
+    window.togglePermitTable = togglePermitTable;
+
+    function esc(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+
+    document.getElementById("btnZipSearch").addEventListener("click", handleZipSearch);
+    document.getElementById("zipInput").addEventListener("keydown", e => { if (e.key === "Enter") handleZipSearch(); });
+
+    // ============================================================
+    // TEAM / CONTACTS MANAGER
+    // ============================================================
+    const CONTACTS_KEY = "dhp_contacts_v1";
+
+    const ROLE_DEFS = [
+      { label: "Attorney",       color: "green" },
+      { label: "Title Company",  color: "green" },
+      { label: "Hard Money Lender", color: "green" },
+      { label: "Appraiser",      color: "green" },
+      { label: "GC",             color: "amber" },
+      { label: "Plumber",        color: "amber" },
+      { label: "Electrician",    color: "amber" },
+      { label: "HVAC",           color: "amber" },
+      { label: "Roofer",         color: "amber" },
+      { label: "Wholesaler",     color: "blue"  },
+      { label: "Agent",          color: "blue"  },
+      { label: "Other",          color: "blue"  },
+    ];
+
+    const COUNTY_OPTIONS = ["Lake","Kane","McHenry","Cook","DuPage","Will","Other"];
+
+    let contactStarValue = 0;
+    let contactFilters = { roles: [], counties: [] };
+
+    function loadContacts() {
+      try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) || "[]"); } catch(e){ return []; }
+    }
+    function saveContacts(contacts) {
+      try { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts)); } catch(e){}
+    }
+
+    function roleChipClass(color) {
+      if (color === "green") return "rchip rchip-green";
+      if (color === "amber") return "rchip rchip-amber";
+      return "rchip rchip-blue";
+    }
+
+    function renderStars(n) {
+      let s = "";
+      for (let i=1; i<=5; i++) s += `<span style="color:${i<=n ? "var(--gold-500)" : "var(--ink-200)"}">★</span>`;
+      return s;
+    }
+
+    function buildFilterChips() {
+      const roleEl = document.getElementById("roleFilterChips");
+      const countyEl = document.getElementById("countyFilterChips");
+      if (!roleEl || !countyEl) return;
+
+      roleEl.innerHTML = ROLE_DEFS.map(r => {
+        const active = contactFilters.roles.includes(r.label) ? " active" : "";
+        return `<span class="filterChip${active}" data-role="${esc(r.label)}">${esc(r.label)}</span>`;
+      }).join("");
+
+      countyEl.innerHTML = COUNTY_OPTIONS.map(c => {
+        const active = contactFilters.counties.includes(c) ? " active" : "";
+        return `<span class="filterChip${active}" data-county="${esc(c)}">${esc(c)}</span>`;
+      }).join("");
+
+      roleEl.querySelectorAll(".filterChip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const role = chip.dataset.role;
+          const idx = contactFilters.roles.indexOf(role);
+          if (idx >= 0) contactFilters.roles.splice(idx, 1);
+          else contactFilters.roles.push(role);
+          buildFilterChips();
+          renderContactGrid();
+        });
+      });
+      countyEl.querySelectorAll(".filterChip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const county = chip.dataset.county;
+          const idx = contactFilters.counties.indexOf(county);
+          if (idx >= 0) contactFilters.counties.splice(idx, 1);
+          else contactFilters.counties.push(county);
+          buildFilterChips();
+          renderContactGrid();
+        });
+      });
+    }
+
+    function renderContactGrid() {
+      const grid = document.getElementById("contactGrid");
+      if (!grid) return;
+      let contacts = loadContacts();
+      const search = (document.getElementById("contactSearch")?.value || "").toLowerCase().trim();
+
+      // Filter
+      contacts = contacts.filter(c => {
+        // Role filter (AND logic)
+        if (contactFilters.roles.length) {
+          if (!contactFilters.roles.every(r => (c.roles || []).includes(r))) return false;
+        }
+        // County filter (AND logic)
+        if (contactFilters.counties.length) {
+          if (!contactFilters.counties.every(co => (c.counties || []).includes(co))) return false;
+        }
+        // Search
+        if (search) {
+          const haystack = [c.name, c.company, c.notes, ...(c.log || []).map(e => e.text)].join(" ").toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (!contacts.length) {
+        grid.innerHTML = `<div class="noResults">No contacts match your filters.</div>`;
+        return;
+      }
+
+      grid.innerHTML = contacts.map(c => {
+        const roleChips = (c.roles || []).map(r => {
+          const def = ROLE_DEFS.find(d => d.label === r);
+          const cls = def ? roleChipClass(def.color) : "rchip rchip-blue";
+          return `<span class="${cls}">${esc(r)}</span>`;
+        }).join("");
+        const countyChips = (c.counties || []).map(co =>
+          `<span class="rchip rchip-blue">${esc(co)}</span>`
+        ).join("");
+        const lastLog = (c.log || [])[0];
+        const lastDate = lastLog ? lastLog.date : null;
+        return `<div class="contactCard">
+          <div class="cc-hd">
+            <div>
+              <p class="cc-name">${esc(c.name || "—")}</p>
+              ${c.company ? `<p class="cc-company">${esc(c.company)}</p>` : ""}
+            </div>
+            <div style="text-align:right">
+              <div class="cc-stars">${renderStars(c.stars || 0)}</div>
+            </div>
+          </div>
+          <div class="cc-bd">
+            <div class="cc-chips">${roleChips}${countyChips}</div>
+            ${lastDate ? `<div class="cc-meta">Last contact: ${esc(lastDate)}</div>` : ""}
+            ${lastLog ? `<div class="cc-log-snippet">${esc(lastLog.text)}</div>` : ""}
+            <div class="cc-actions">
+              <button class="miniBtn accent" onclick="openEditContact('${esc(c.id)}')" type="button">Edit</button>
+              <button class="miniBtn" onclick="openLogModal('${esc(c.id)}')" type="button">Log</button>
+              <button class="miniBtn danger" onclick="deleteContact('${esc(c.id)}')" type="button">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    function openAddContact() {
+      document.getElementById("contactModalTitle").textContent = "Add Contact";
+      document.getElementById("editContactId").value = "";
+      document.getElementById("cf_name").value = "";
+      document.getElementById("cf_company").value = "";
+      document.getElementById("cf_phone").value = "";
+      document.getElementById("cf_email").value = "";
+      document.getElementById("cf_website").value = "";
+      document.getElementById("cf_notes").value = "";
+      contactStarValue = 0;
+      buildContactModalChips([], []);
+      updateStarUI();
+      openModal("contactModal");
+    }
+
+    function openEditContact(id) {
+      const contacts = loadContacts();
+      const c = contacts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById("contactModalTitle").textContent = "Edit Contact";
+      document.getElementById("editContactId").value = id;
+      document.getElementById("cf_name").value = c.name || "";
+      document.getElementById("cf_company").value = c.company || "";
+      document.getElementById("cf_phone").value = c.phone || "";
+      document.getElementById("cf_email").value = c.email || "";
+      document.getElementById("cf_website").value = c.website || "";
+      document.getElementById("cf_notes").value = c.notes || "";
+      contactStarValue = c.stars || 0;
+      buildContactModalChips(c.roles || [], c.counties || []);
+      updateStarUI();
+      openModal("contactModal");
+    }
+    window.openEditContact = openEditContact;
+
+    function buildContactModalChips(selectedRoles, selectedCounties) {
+      const roleEl = document.getElementById("roleChipSelector");
+      const countyEl = document.getElementById("countyChipSelector");
+      if (!roleEl || !countyEl) return;
+
+      roleEl.innerHTML = ROLE_DEFS.map(r => {
+        const sel = selectedRoles.includes(r.label);
+        const selCls = sel ? (r.color === "green" ? " sel-green" : r.color === "amber" ? " sel-amber" : " sel-blue") : "";
+        return `<span class="selectorChip${selCls}" data-role="${esc(r.label)}">${esc(r.label)}</span>`;
+      }).join("");
+
+      countyEl.innerHTML = COUNTY_OPTIONS.map(co => {
+        const sel = selectedCounties.includes(co);
+        return `<span class="selectorChip${sel ? " sel-county" : ""}" data-county="${esc(co)}">${esc(co)}</span>`;
+      }).join("");
+
+      roleEl.querySelectorAll(".selectorChip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const role = chip.dataset.role;
+          const def = ROLE_DEFS.find(d => d.label === role);
+          const selCls = def ? (def.color === "green" ? "sel-green" : def.color === "amber" ? "sel-amber" : "sel-blue") : "sel-blue";
+          chip.classList.toggle(selCls);
+        });
+      });
+      countyEl.querySelectorAll(".selectorChip").forEach(chip => {
+        chip.addEventListener("click", () => chip.classList.toggle("sel-county"));
+      });
+    }
+
+    function updateStarUI() {
+      document.querySelectorAll("#starRating .starBtn").forEach(btn => {
+        const s = Number(btn.dataset.star);
+        btn.classList.toggle("lit", s <= contactStarValue);
+      });
+    }
+
+    document.querySelectorAll("#starRating .starBtn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        contactStarValue = Number(btn.dataset.star);
+        updateStarUI();
+      });
+    });
+
+    function saveContact() {
+      const name = (document.getElementById("cf_name").value || "").trim();
+      if (!name) { alert("Name is required."); return; }
+
+      const selectedRoles = Array.from(document.querySelectorAll("#roleChipSelector .selectorChip.sel-green, #roleChipSelector .selectorChip.sel-amber, #roleChipSelector .selectorChip.sel-blue")).map(c => c.dataset.role);
+      const selectedCounties = Array.from(document.querySelectorAll("#countyChipSelector .selectorChip.sel-county")).map(c => c.dataset.county);
+
+      const contacts = loadContacts();
+      const id = document.getElementById("editContactId").value;
+
+      if (id) {
+        const idx = contacts.findIndex(c => c.id === id);
+        if (idx >= 0) {
+          contacts[idx] = { ...contacts[idx], name, company: document.getElementById("cf_company").value, phone: document.getElementById("cf_phone").value, email: document.getElementById("cf_email").value, website: document.getElementById("cf_website").value, notes: document.getElementById("cf_notes").value, roles: selectedRoles, counties: selectedCounties, stars: contactStarValue };
+        }
+      } else {
+        contacts.unshift({ id: "c" + Date.now(), name, company: document.getElementById("cf_company").value, phone: document.getElementById("cf_phone").value, email: document.getElementById("cf_email").value, website: document.getElementById("cf_website").value, notes: document.getElementById("cf_notes").value, roles: selectedRoles, counties: selectedCounties, stars: contactStarValue, log: [] });
+      }
+      saveContacts(contacts);
+      closeModal("contactModal");
+      renderContactGrid();
+    }
+
+    function deleteContact(id) {
+      if (!confirm("Delete this contact? This cannot be undone.")) return;
+      const contacts = loadContacts().filter(c => c.id !== id);
+      saveContacts(contacts);
+      renderContactGrid();
+    }
+    window.deleteContact = deleteContact;
+
+    function openLogModal(id) {
+      const contacts = loadContacts();
+      const c = contacts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById("logModalName").textContent = c.name || "Log";
+      document.getElementById("logContactId").value = id;
+      document.getElementById("logNewEntry").value = "";
+      renderLogList(c.log || []);
+      openModal("logModal");
+    }
+    window.openLogModal = openLogModal;
+
+    function renderLogList(log) {
+      const el = document.getElementById("logList");
+      if (!el) return;
+      if (!log.length) { el.innerHTML = `<div class="noResults" style="padding:var(--s3)">No log entries yet.</div>`; return; }
+      el.innerHTML = log.map((entry, idx) =>
+        `<div class="logEntry">
+          <span class="logText">${esc(entry.text)}</span>
+          <span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="logDate">${esc(entry.date)}</span>
+            <button class="miniBtn danger" style="padding:2px 6px;font-size:10px" onclick="deleteLogEntry('${esc(document.getElementById("logContactId").value)}',${idx})" type="button">×</button>
+          </span>
+        </div>`
+      ).join("");
+    }
+
+    function addLogEntry() {
+      const text = (document.getElementById("logNewEntry").value || "").trim();
+      if (!text) return;
+      const id = document.getElementById("logContactId").value;
+      const contacts = loadContacts();
+      const idx = contacts.findIndex(c => c.id === id);
+      if (idx < 0) return;
+      const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      contacts[idx].log = contacts[idx].log || [];
+      contacts[idx].log.unshift({ date: today, text });
+      saveContacts(contacts);
+      document.getElementById("logNewEntry").value = "";
+      renderLogList(contacts[idx].log);
+      renderContactGrid();
+    }
+
+    function deleteLogEntry(contactId, logIdx) {
+      const contacts = loadContacts();
+      const idx = contacts.findIndex(c => c.id === contactId);
+      if (idx < 0) return;
+      contacts[idx].log = (contacts[idx].log || []).filter((_, i) => i !== logIdx);
+      saveContacts(contacts);
+      renderLogList(contacts[idx].log);
+      renderContactGrid();
+    }
+    window.deleteLogEntry = deleteLogEntry;
+
+    // Wire up contact events
+    document.getElementById("btnAddContact").addEventListener("click", openAddContact);
+    document.getElementById("btnSaveContact").addEventListener("click", saveContact);
+    document.getElementById("btnAddLog").addEventListener("click", addLogEntry);
+    document.getElementById("btnClearContactFilter").addEventListener("click", () => {
+      contactFilters = { roles: [], counties: [] };
+      document.getElementById("contactSearch").value = "";
+      buildFilterChips();
+      renderContactGrid();
+    });
+    document.getElementById("contactSearch").addEventListener("input", renderContactGrid);
+
+    // Init contact UI
+    buildFilterChips();
+    renderContactGrid();
+
   </script>
 </body>
 </html>
