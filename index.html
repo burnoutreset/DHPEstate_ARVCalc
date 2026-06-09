@@ -13,6 +13,8 @@
 
   <!-- jsPDF (PDF export) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- SheetJS (Excel parsing for County Info) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     /* ============================================================
@@ -1114,6 +1116,318 @@
     .resWorkflow ol li { margin-bottom: 4px; }
     .resWorkflow ol li b { color: var(--ink-900); }
 
+    /* ============================================================
+       MAIN TABS (Calculator / Team / County Info)
+       ============================================================ */
+    .mainTabs {
+      display: flex;
+      gap: 2px;
+      border-bottom: 2px solid var(--ink-100);
+      margin-bottom: var(--s5);
+      flex-wrap: wrap;
+    }
+    .mainTab {
+      padding: 10px 18px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-600);
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      transition: color var(--t1), border-color var(--t1);
+      letter-spacing: -0.005em;
+    }
+    .mainTab:hover { color: var(--brand-700); }
+    .mainTab.active {
+      color: var(--brand-700);
+      border-bottom-color: var(--brand-700);
+      font-weight: 600;
+    }
+    .tabPanel { display: none; }
+    .tabPanel.active { display: block; }
+
+    /* ============================================================
+       TEAM / CONTACTS
+       ============================================================ */
+    .contactsToolbar {
+      display: flex;
+      gap: var(--s3);
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: var(--s4);
+    }
+    .contactsToolbar input {
+      max-width: 260px;
+    }
+    .filterChips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: var(--s4);
+    }
+    .filterChip {
+      padding: 4px 10px;
+      border-radius: var(--r1);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--ink-200);
+      background: var(--white);
+      color: var(--ink-600);
+      cursor: pointer;
+      transition: background var(--t1), border-color var(--t1), color var(--t1);
+      user-select: none;
+    }
+    .filterChip:hover { border-color: var(--ink-300); background: var(--ink-50); }
+    .filterChip.active {
+      background: var(--brand-700);
+      border-color: var(--brand-700);
+      color: var(--white);
+    }
+    /* Role chip colors */
+    .rchip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: var(--r1); font-size: 10px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+    .rchip-green { background: var(--signal-pos-bg); color: var(--signal-pos); }
+    .rchip-amber { background: var(--signal-warn-bg); color: var(--signal-warn); }
+    .rchip-blue  { background: var(--brand-50); color: var(--brand-700); }
+    [data-theme="dark"] .rchip-blue { background: var(--brand-100); }
+
+    .contactGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--s4);
+    }
+    .contactCard {
+      background: var(--white);
+      border: var(--border);
+      border-radius: var(--r3);
+      overflow: hidden;
+      transition: border-color var(--t1);
+    }
+    .contactCard:hover { border-color: var(--ink-200); }
+    .contactCard .cc-hd {
+      padding: var(--s3) var(--s4);
+      border-bottom: var(--border);
+      background: var(--ink-50);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--s2);
+    }
+    .contactCard .cc-name { font-family: var(--font-serif); font-size: 15px; font-weight: 600; color: var(--ink-900); margin: 0; }
+    .contactCard .cc-company { font-size: 11px; color: var(--ink-500); margin: 2px 0 0; }
+    .contactCard .cc-bd { padding: var(--s3) var(--s4); }
+    .contactCard .cc-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: var(--s2); }
+    .contactCard .cc-stars { color: var(--gold-500); font-size: 14px; letter-spacing: 1px; }
+    .contactCard .cc-meta { font-size: 11px; color: var(--ink-500); margin-top: var(--s2); }
+    .contactCard .cc-log-snippet { font-size: 11px; color: var(--ink-600); margin-top: 4px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contactCard .cc-actions { display: flex; gap: 6px; margin-top: var(--s3); }
+
+    /* Contact modal - override existing modal max-width */
+    #contactModal .modal { max-width: 680px; }
+    #logModal .modal { max-width: 560px; }
+
+    .roleChipSelector, .countyChipSelector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .selectorChip {
+      padding: 4px 10px;
+      border-radius: var(--r1);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--ink-200);
+      background: var(--white);
+      color: var(--ink-600);
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--t1), border-color var(--t1), color var(--t1);
+    }
+    .selectorChip:hover { border-color: var(--ink-300); background: var(--ink-50); }
+    .selectorChip.sel-green { background: var(--signal-pos-bg); border-color: var(--signal-pos); color: var(--signal-pos); }
+    .selectorChip.sel-amber { background: var(--signal-warn-bg); border-color: var(--signal-warn); color: var(--signal-warn); }
+    .selectorChip.sel-blue  { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-700); }
+    .selectorChip.sel-county { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-700); }
+
+    .starRating { display: flex; gap: 4px; margin-top: 6px; }
+    .starBtn { font-size: 20px; background: none; border: none; cursor: pointer; color: var(--ink-200); padding: 0; line-height: 1; transition: color var(--t1); }
+    .starBtn.lit { color: var(--gold-500); }
+    .starBtn:hover { color: var(--gold-300); }
+
+    .logList { max-height: 320px; overflow-y: auto; }
+    .logEntry {
+      padding: var(--s2) var(--s3);
+      border-bottom: var(--border);
+      font-size: 12px;
+      color: var(--ink-700);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--s2);
+    }
+    .logEntry:last-child { border-bottom: none; }
+    .logEntry .logDate { font-size: 10px; color: var(--ink-400); white-space: nowrap; flex-shrink: 0; }
+    .logEntry .logText { flex: 1; }
+
+    /* ============================================================
+       COUNTY INFO TAB
+       ============================================================ */
+    .zipSearchBar {
+      display: flex;
+      gap: var(--s2);
+      align-items: center;
+      max-width: 400px;
+      margin-bottom: var(--s5);
+    }
+    .zipSearchBar input {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      letter-spacing: 0.04em;
+    }
+    .countyHeader {
+      display: flex;
+      align-items: center;
+      gap: var(--s3);
+      margin-bottom: var(--s5);
+      padding-bottom: var(--s4);
+      border-bottom: var(--border-strong);
+    }
+    .countyHeader h2 {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--ink-900);
+    }
+    .countyHeader .region {
+      font-size: 12px;
+      color: var(--ink-500);
+      margin: 4px 0 0;
+    }
+    .countyPanelGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: var(--s4);
+    }
+    .infoCard {
+      background: var(--white);
+      border: var(--border);
+      border-radius: var(--r3);
+      overflow: hidden;
+    }
+    .infoCard .ic-hd {
+      padding: var(--s3) var(--s4);
+      background: var(--ink-50);
+      border-bottom: var(--border);
+      font-family: var(--font-ui);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink-600);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .infoCard .ic-bd { padding: var(--s3) var(--s4); }
+    .infoRow {
+      display: flex;
+      gap: var(--s2);
+      align-items: flex-start;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--ink-50);
+      font-size: 12px;
+    }
+    .infoRow:last-child { border-bottom: none; }
+    .infoRow .ir-label { color: var(--ink-500); font-weight: 500; min-width: 140px; flex-shrink: 0; font-size: 11px; }
+    .infoRow .ir-val { color: var(--ink-900); flex: 1; }
+    .infoRow a { color: var(--brand-600); text-decoration: none; word-break: break-all; }
+    .infoRow a:hover { text-decoration: underline; color: var(--brand-700); }
+
+    .permitToggle {
+      display: flex;
+      align-items: center;
+      gap: var(--s2);
+      cursor: pointer;
+      padding: var(--s3) var(--s4);
+      background: var(--ink-50);
+      border: var(--border);
+      border-radius: var(--r2);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-700);
+      user-select: none;
+      margin-top: var(--s4);
+      transition: background var(--t1);
+    }
+    .permitToggle:hover { background: var(--ink-100); }
+    .permitToggle .arrow { transition: transform var(--t2); }
+    .permitToggle.open .arrow { transform: rotate(90deg); }
+
+    .permitTableWrap {
+      display: none;
+      margin-top: var(--s2);
+    }
+    .permitTableWrap.open { display: block; }
+
+    .permit-yes td { background: var(--signal-pos-bg) !important; color: var(--signal-pos) !important; }
+    .permit-no  td { background: var(--signal-warn-bg) !important; color: var(--signal-warn) !important; }
+
+    .resourceCard {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--s3);
+      padding: var(--s3);
+      border: var(--border);
+      border-radius: var(--r2);
+      background: var(--white);
+      margin-bottom: var(--s2);
+      transition: border-color var(--t1);
+    }
+    .resourceCard:hover { border-color: var(--brand-500); }
+    .resourceCard .rc-body { flex: 1; min-width: 0; }
+    .resourceCard .rc-name { font-weight: 600; font-size: 13px; color: var(--ink-900); margin: 0 0 3px; }
+    .resourceCard .rc-desc { font-size: 11.5px; color: var(--ink-600); margin: 0 0 6px; line-height: 1.45; }
+
+    .xl-loading {
+      display: flex;
+      align-items: center;
+      gap: var(--s2);
+      padding: var(--s3) var(--s4);
+      background: var(--brand-50);
+      border: 1px solid var(--brand-100);
+      border-radius: var(--r2);
+      font-size: 12px;
+      color: var(--brand-700);
+      margin-bottom: var(--s4);
+    }
+    .xl-loading .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--brand-100);
+      border-top-color: var(--brand-700);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .xl-error {
+      padding: var(--s4);
+      background: var(--signal-neg-bg);
+      border: 1px solid var(--signal-neg);
+      border-radius: var(--r2);
+      color: var(--signal-neg);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .xl-error b { font-weight: 700; }
+    .noResults {
+      padding: var(--s5);
+      text-align: center;
+      color: var(--ink-500);
+      font-size: 13px;
+    }
+
   </style>
 </head>
 </head>
@@ -1139,6 +1453,15 @@
       </div>
     </div>
 
+    <!-- Main tab navigation -->
+    <div class="mainTabs">
+      <button class="mainTab active" data-tab="calculator">ARV Calculator</button>
+      <button class="mainTab" data-tab="team">Team</button>
+      <button class="mainTab" data-tab="countyinfo">County Info</button>
+    </div>
+
+    <!-- CALCULATOR TAB PANEL -->
+    <div class="tabPanel active" id="panel-calculator">
     <div class="grid">
       <!-- LEFT: INPUTS -->
       <div class="card">
@@ -1699,8 +2022,120 @@
       </div>
     </div>
   </div>
+    </div><!-- end panel-calculator -->
 
-  <!-- Modals -->
+    <!-- TEAM TAB PANEL -->
+    <div class="tabPanel" id="panel-team">
+      <div class="card">
+        <div class="hd">
+          <div><h2>Team Contacts</h2><p class="sub">Attorneys · Title · Lenders · Contractors · Agents</p></div>
+          <button class="btn primary" id="btnAddContact" type="button">+ Add Contact</button>
+        </div>
+        <div class="bd">
+          <div class="contactsToolbar">
+            <input type="search" id="contactSearch" placeholder="Search name, company, notes…" />
+            <button class="miniBtn" id="btnClearContactFilter" type="button">Clear filters</button>
+          </div>
+          <div class="filterChips" id="roleFilterChips"><!-- role filter chips inserted by JS --></div>
+          <div class="filterChips" id="countyFilterChips"><!-- county filter chips inserted by JS --></div>
+          <div id="contactGrid" class="contactGrid">
+            <div class="noResults">No contacts yet. Click <b>+ Add Contact</b> to get started.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end panel-team -->
+
+    <!-- COUNTY INFO TAB PANEL -->
+    <div class="tabPanel" id="panel-countyinfo">
+      <div class="card">
+        <div class="hd">
+          <div><h2>County Info</h2><p class="sub">Illinois county GC requirements, permit process, and investor notes</p></div>
+          <span class="chip" id="xlStatus">Loading Excel data…</span>
+        </div>
+        <div class="bd">
+          <div class="xl-loading" id="xlLoadingBar">
+            <div class="spinner"></div>
+            <span>Loading il_county_data.xlsx…</span>
+          </div>
+          <div id="xlErrorBar" style="display:none"></div>
+          <div id="countyInfoContent" style="display:none">
+            <div class="zipSearchBar">
+              <input type="text" id="zipInput" placeholder="Enter ZIP code" inputmode="numeric" maxlength="5" />
+              <button class="btn primary" id="btnZipSearch" type="button">Search</button>
+            </div>
+            <div id="countyResult"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end panel-countyinfo -->
+
+  </div><!-- end .wrap -->
+
+  <!-- Contact Add/Edit Modal -->
+  <div class="modalBack" id="contactModal">
+    <div class="modal" style="max-width:680px">
+      <div class="hd">
+        <h2 id="contactModalTitle">Add Contact</h2>
+        <button class="miniBtn" onclick="closeModal('contactModal')">Close</button>
+      </div>
+      <div class="bd">
+        <input type="hidden" id="editContactId" />
+        <div class="formgrid">
+          <div class="fg w6"><label>Name *</label><input id="cf_name" placeholder="Full name" /></div>
+          <div class="fg w6"><label>Company</label><input id="cf_company" placeholder="Company or brokerage" /></div>
+          <div class="fg w4"><label>Phone</label><input id="cf_phone" placeholder="(555) 555-5555" inputmode="tel" /></div>
+          <div class="fg w4"><label>Email</label><input id="cf_email" placeholder="email@example.com" type="email" /></div>
+          <div class="fg w4"><label>Website</label><input id="cf_website" placeholder="https://" /></div>
+          <div class="fg w12">
+            <label>Roles (select all that apply)</label>
+            <div class="roleChipSelector" id="roleChipSelector"></div>
+          </div>
+          <div class="fg w12">
+            <label>County Coverage</label>
+            <div class="countyChipSelector" id="countyChipSelector"></div>
+          </div>
+          <div class="fg w12">
+            <label>Star Rating</label>
+            <div class="starRating" id="starRating">
+              <button class="starBtn" data-star="1" type="button">★</button>
+              <button class="starBtn" data-star="2" type="button">★</button>
+              <button class="starBtn" data-star="3" type="button">★</button>
+              <button class="starBtn" data-star="4" type="button">★</button>
+              <button class="starBtn" data-star="5" type="button">★</button>
+            </div>
+          </div>
+          <div class="fg w12"><label>Notes</label><textarea id="cf_notes" placeholder="Notes about this contact…" style="min-height:80px"></textarea></div>
+        </div>
+        <div style="display:flex;gap:var(--s2);margin-top:var(--s4);justify-content:flex-end">
+          <button class="btn secondary" onclick="closeModal('contactModal')" type="button">Cancel</button>
+          <button class="btn primary" id="btnSaveContact" type="button">Save Contact</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversation Log Modal -->
+  <div class="modalBack" id="logModal">
+    <div class="modal" style="max-width:520px">
+      <div class="hd">
+        <div>
+          <h2 id="logModalName">Log</h2>
+          <p class="sub" style="margin:3px 0 0;font-size:12px;color:var(--ink-500)">Conversation history — newest first</p>
+        </div>
+        <button class="miniBtn" onclick="closeModal('logModal')">Close</button>
+      </div>
+      <div class="bd">
+        <div style="display:flex;gap:var(--s2);margin-bottom:var(--s3)">
+          <textarea id="logNewEntry" placeholder="Add a note or conversation summary…" style="flex:1;min-height:60px"></textarea>
+          <button class="btn primary" id="btnAddLog" type="button" style="align-self:flex-end">Add</button>
+        </div>
+        <input type="hidden" id="logContactId" />
+        <div class="logList" id="logList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals (existing ones) -->
   <div class="modalBack" id="libModal">
     <div class="modal">
       <div class="hd">
